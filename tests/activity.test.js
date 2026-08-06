@@ -99,6 +99,7 @@ test("share image layout includes every history year in a compact grid", () => {
 
 test("share screenshot renderer draws the complete history to a PNG", async () => {
   let fillRects = 0;
+  const drawnText = [];
   const context = {
     beginPath() {},
     roundRect() {},
@@ -108,7 +109,9 @@ test("share screenshot renderer draws the complete history to a PNG", async () =
     fillRect() {
       fillRects += 1;
     },
-    fillText() {},
+    fillText(value) {
+      drawnText.push(value);
+    },
     moveTo() {},
     lineTo() {},
   };
@@ -128,6 +131,8 @@ test("share screenshot renderer draws the complete history to a PNG", async () =
   assert.equal(canvas.width, 2_700);
   assert.equal(context.imageSmoothingEnabled, false);
   assert.ok(fillRects > 1_000, "all three calendar years should be drawn");
+  assert.ok(drawnText.includes("DAYS IN ROAM"));
+  assert.ok(drawnText.includes("@RoamResearch · Contribution Graph"));
 });
 
 test("share screenshot falls back to a local PNG download", async () => {
@@ -176,9 +181,17 @@ test("stats calculate totals and streaks", () => {
   assert.deepEqual(stats, {
     totalBlocks: 15,
     activeDays: 5,
+    daysInRoam: 6,
+    firstUseDate: "2026-08-01",
     currentStreak: 3,
     longestStreak: 3,
   });
+});
+
+test("days in Roam is zero when no dated blocks exist", () => {
+  const stats = calculateStats({}, new Date("2026-08-06T12:00:00Z"));
+  assert.equal(stats.daysInRoam, 0);
+  assert.equal(stats.firstUseDate, null);
 });
 
 test("query selection prefers Roam's asynchronous API", async () => {

@@ -12,7 +12,7 @@ This fork is a ground-up, dependency-free rewrite of [Dagulf795/contribution-gra
   - 10-24 blocks
   - 25-49 blocks
   - 50+ blocks
-- Total blocks, active days, current streak, and longest streak
+- Total blocks, active days, elapsed days in Roam since the first dated block, current streak, and longest streak
 - Entire graph by default
 - Optional current-Roam-user scope for multiplayer graphs
 - A complete-history PNG export through **Share Screenshot**

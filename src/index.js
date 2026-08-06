@@ -141,6 +141,11 @@ export const calculateStats = (counts, today = new Date()) => {
     .filter((key) => counts[key] > 0)
     .sort();
   const totalBlocks = activeKeys.reduce((total, key) => total + counts[key], 0);
+  const firstUseDate = activeKeys[0] || null;
+  const todayDate = createLocalDate(today.getFullYear(), today.getMonth(), today.getDate());
+  const daysInRoam = firstUseDate
+    ? Math.max(0, Math.round((todayDate - dateFromKey(firstUseDate)) / 86_400_000) + 1)
+    : 0;
 
   let longestStreak = 0;
   let runningStreak = 0;
@@ -163,6 +168,8 @@ export const calculateStats = (counts, today = new Date()) => {
   return {
     totalBlocks,
     activeDays: activeKeys.length,
+    daysInRoam,
+    firstUseDate,
     currentStreak,
     longestStreak,
   };
@@ -212,13 +219,13 @@ const drawShareYear = (context, { year, counts, x, y, fontFamily }) => {
   const gridLeft = x + GRAPH_LEFT;
   const gridTop = y + GRAPH_TOP;
 
-  context.fillStyle = "#5c7080";
-  context.font = `500 10px ${fontFamily}`;
+  context.fillStyle = "#394b59";
+  context.font = `600 10px ${fontFamily}`;
   context.textAlign = "left";
   context.fillText(String(year), x, y + 9);
 
-  context.fillStyle = "#738694";
-  context.font = `400 9px ${fontFamily}`;
+  context.fillStyle = "#5c7080";
+  context.font = `500 9px ${fontFamily}`;
   context.textAlign = "left";
   for (const { month, week } of calendar.monthColumns) {
     context.fillText(monthNames[month], gridLeft + week * CELL_STEP, y + 9);
@@ -287,6 +294,7 @@ export const createShareScreenshot = async ({
   const statItems = [
     ["BLOCKS", stats.totalBlocks.toLocaleString()],
     ["ACTIVE DAYS", stats.activeDays.toLocaleString()],
+    ["DAYS IN ROAM", `${stats.daysInRoam.toLocaleString()}d`],
     ["CURRENT STREAK", `${stats.currentStreak}d`],
     ["LONGEST STREAK", `${stats.longestStreak}d`],
   ];
@@ -307,8 +315,8 @@ export const createShareScreenshot = async ({
     context.font = `500 16px ${fontFamily}`;
     context.textAlign = "left";
     context.fillText(value, statX + 12, statsY + 22);
-    context.fillStyle = "#738694";
-    context.font = `9px ${fontFamily}`;
+    context.fillStyle = "#5c7080";
+    context.font = `500 9px ${fontFamily}`;
     context.fillText(label, statX + 12, statsY + 39);
   }
 
@@ -325,10 +333,10 @@ export const createShareScreenshot = async ({
   }
 
   const footerY = layout.height - 21;
-  context.fillStyle = "#738694";
+  context.fillStyle = "#5c7080";
   context.font = `9px ${fontFamily}`;
   context.textAlign = "left";
-  context.fillText("Generated from Roam Research · Contribution Graph", SHARE_PADDING, footerY);
+  context.fillText("@RoamResearch · Contribution Graph", SHARE_PADDING, footerY);
   context.textAlign = "right";
   context.fillText("Less", layout.width - SHARE_PADDING - 86, footerY);
   for (let level = 0; level <= 4; level += 1) {
@@ -531,14 +539,20 @@ const renderLegend = () => {
 const renderStats = (container, counts) => {
   const stats = calculateStats(counts);
   const values = [
-    ["Blocks", stats.totalBlocks.toLocaleString()],
-    ["Active days", stats.activeDays.toLocaleString()],
-    ["Current streak", `${stats.currentStreak}d`],
-    ["Longest streak", `${stats.longestStreak}d`],
+    ["Blocks", stats.totalBlocks.toLocaleString(), "All dated blocks in the selected scope"],
+    ["Active days", stats.activeDays.toLocaleString(), "Days containing at least one created block"],
+    [
+      "Days in Roam",
+      `${stats.daysInRoam.toLocaleString()}d`,
+      stats.firstUseDate ? `Since the first dated block on ${stats.firstUseDate}` : "No dated blocks yet",
+    ],
+    ["Current streak", `${stats.currentStreak}d`, "Consecutive active days through today"],
+    ["Longest streak", `${stats.longestStreak}d`, "Longest consecutive run of active days"],
   ];
   container.replaceChildren(
-    ...values.map(([label, value]) => {
+    ...values.map(([label, value, title]) => {
       const card = createElement("div", "rcg-stat");
+      card.title = title;
       card.append(
         createElement("strong", "rcg-stat__value", value),
         createElement("span", "rcg-stat__label", label)
@@ -711,6 +725,12 @@ export const createExtensionController = ({ extensionAPI, api = window.roamAlpha
       title,
       createElement("p", "rcg-subtitle", "Complete Roam block creation history")
     );
+    const roamBadge = createElement(
+      "span",
+      "bp3-tag bp3-minimal rcg-roam-badge",
+      "@RoamResearch"
+    );
+    roamBadge.title = "Built for Roam Research";
     const actions = createElement("div", "rcg-actions");
     const scopeLabel = createElement("label", "rcg-scope");
     scopeLabel.appendChild(createElement("span", "rcg-visually-hidden", "History scope"));
@@ -755,7 +775,7 @@ export const createExtensionController = ({ extensionAPI, api = window.roamAlpha
     closeButton.setAttribute("aria-label", "Close contribution graph");
     closeButton.addEventListener("click", close);
     actions.append(scopeLabel, shareButton, refresh, closeButton);
-    header.append(mark, titleGroup, actions);
+    header.append(mark, titleGroup, roamBadge, actions);
 
     const status = createElement("div", "rcg-status", "Open the graph to load activity.");
     status.setAttribute("role", "status");
