@@ -138,7 +138,12 @@ test("share screenshot renderer draws the complete history to a PNG", async () =
   assert.equal(context.imageSmoothingEnabled, false);
   assert.ok(fillRects > 1_000, "all three calendar years should be drawn");
   assert.ok(drawnText.includes("DAYS IN ROAM"));
-  assert.ok(drawnText.indexOf("DAYS IN ROAM") < drawnText.indexOf("BLOCKS"));
+  assert.deepEqual(
+    drawnText.filter((value) =>
+      ["DAYS IN ROAM", "LONGEST STREAK", "CURRENT STREAK", "BLOCKS"].includes(value)
+    ),
+    ["DAYS IN ROAM", "LONGEST STREAK", "CURRENT STREAK", "BLOCKS"]
+  );
   assert.ok(!drawnText.includes("ACTIVE DAYS"));
   assert.ok(
     drawnText.includes("Entire graph · Complete Roam block history · 2024–2026 · @RoamResearch")
@@ -149,6 +154,7 @@ test("share screenshot renderer draws the complete history to a PNG", async () =
   const moreLabel = drawnTextEntries.find(({ value }) => value === "More");
   const lastLegendCell = filledRects.at(-1);
   assert.ok(lastLegendCell[0] + lastLegendCell[2] < moreLabel.x);
+  assert.equal(lastLegendCell[1] + lastLegendCell[3] / 2, moreLabel.y);
   assert.ok(drawnFonts.every((font) => font.includes("-apple-system")));
 });
 

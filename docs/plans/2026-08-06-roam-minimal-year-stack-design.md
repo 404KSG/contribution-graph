@@ -30,6 +30,6 @@ The final type hierarchy uses Roam and Blueprint's macOS-first UI sans-serif sta
 
 Add `Days in Roam` as elapsed calendar days from the first dated block through today, inclusive. Keep active-day calculation internally for annual tooltips and streak logic, but remove it from the summary rail and shared image to reduce competing metrics. Expose the first block date as the metric tooltip and include the elapsed duration in shared images.
 
-Lead both the live summary rail and shared-image metrics with `Days in Roam`, followed by `Blocks`, so the primary longevity signal appears first and both surfaces retain identical ordering.
+Use the same longevity-first order in the live summary rail and shared-image metrics: `Days in Roam`, `Longest streak`, `Current streak`, then `Blocks`. Align the screenshot legend labels and its five cells to one explicit vertical center so the compact footer remains optically level.
 
 Use an 11-pixel cell with a 3-pixel integer gap. This fills the desktop content rail without stretching the SVG, preserves crisp square geometry, and removes the unused right-side strip while retaining horizontal scrolling on constrained viewports.

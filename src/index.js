@@ -293,9 +293,9 @@ export const createShareScreenshot = async ({
 
   const statItems = [
     ["DAYS IN ROAM", `${stats.daysInRoam.toLocaleString()}d`],
-    ["BLOCKS", stats.totalBlocks.toLocaleString()],
-    ["CURRENT STREAK", `${stats.currentStreak}d`],
     ["LONGEST STREAK", `${stats.longestStreak}d`],
+    ["CURRENT STREAK", `${stats.currentStreak}d`],
+    ["BLOCKS", stats.totalBlocks.toLocaleString()],
   ];
   const statsY = 72;
   const statsWidth = layout.width - SHARE_PADDING * 2;
@@ -331,18 +331,19 @@ export const createShareScreenshot = async ({
     });
   }
 
-  const footerY = layout.height - 21;
+  const footerCenterY = layout.height - 21;
   const legendX = layout.width - SHARE_PADDING - 106;
   context.fillStyle = "#394b59";
   context.font = `600 9px ${fontFamily}`;
   context.textAlign = "left";
-  context.fillText("Less", legendX, footerY);
+  context.textBaseline = "middle";
+  context.fillText("Less", legendX, footerCenterY);
   for (let level = 0; level <= 4; level += 1) {
     context.fillStyle = ["#ebf1f5", "#c6e6f4", "#79c0e8", "#2b95d6", "#106ba3"][level];
-    context.fillRect(legendX + 27 + level * 10, footerY - 8, 7, 7);
+    context.fillRect(legendX + 27 + level * 10, footerCenterY - 4, 8, 8);
   }
   context.fillStyle = "#394b59";
-  context.fillText("More", legendX + 82, footerY);
+  context.fillText("More", legendX + 82, footerCenterY);
 
   const blob = await new Promise((resolve, reject) => {
     canvas.toBlob(
@@ -542,9 +543,9 @@ const renderStats = (container, counts) => {
       `${stats.daysInRoam.toLocaleString()}d`,
       stats.firstUseDate ? `Since the first dated block on ${stats.firstUseDate}` : "No dated blocks yet",
     ],
-    ["Blocks", stats.totalBlocks.toLocaleString(), "All dated blocks in the selected scope"],
-    ["Current streak", `${stats.currentStreak}d`, "Consecutive active days through today"],
     ["Longest streak", `${stats.longestStreak}d`, "Longest consecutive run of active days"],
+    ["Current streak", `${stats.currentStreak}d`, "Consecutive active days through today"],
+    ["Blocks", stats.totalBlocks.toLocaleString(), "All dated blocks in the selected scope"],
   ];
   container.replaceChildren(
     ...values.map(([label, value, title]) => {
