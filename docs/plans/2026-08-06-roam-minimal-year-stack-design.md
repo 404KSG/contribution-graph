@@ -17,3 +17,11 @@ The screenshot layout also uses exactly one year per row. Its logical width is f
 ## Verification
 
 Update layout tests to require one column for both short and long histories and verify image height grows once per year. Retain the full Canvas render test, delivery fallback test, all data-correctness tests, the 500,000-row benchmark, reproducible build check, Depot CI, and live developer-extension reload.
+
+## Detail refinement
+
+Scope and Share Screenshot use an identical 32-pixel Blueprint control height. Refresh is an icon-only Blueprint button with accessible label and tooltip. The metadata row contains only scope and year coverage; explanatory prose and cache/block details are removed.
+
+Screenshot progress is communicated in the initiating button: Preparing, Shared, Copied, Downloaded, Canceled, or Try again. Feedback clears after a short delay and timers are disposed on extension unload.
+
+Annual SVGs display at their native dimensions instead of being fractionally scaled to container width. Labels inherit Roam's font, use normal weight and quieter color, and cells use crisp-edge rendering. PNG export increases to 3× resolution and disables image smoothing.
