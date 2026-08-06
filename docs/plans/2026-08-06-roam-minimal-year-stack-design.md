@@ -37,3 +37,5 @@ Add `Days in Roam` as elapsed calendar days from the first dated block through t
 Use the same longevity-first order in the live summary rail and shared-image metrics: `Days in Roam`, `Longest streak`, `Current streak`, then `Blocks`. Align the screenshot legend labels and its five cells to one explicit vertical center so the compact footer remains optically level.
 
 Use an 11-pixel cell with a 3-pixel integer gap. This fills the desktop content rail without stretching the SVG, preserves crisp square geometry, and removes the unused right-side strip while retaining horizontal scrolling on constrained viewports.
+
+Distinguish calendar semantics instead of giving every non-contributing square the same meaning: future dates are omitted, dates before the first dated block use a faint outline, and recorded zero-activity days retain the lightest filled level. Summary values remain pure numbers because their labels already supply the unit. Shared images use a stable English date-only stamp, while year labels increase to 11 pixels and month/weekday labels to 10 pixels for clearer live and 3× PNG rendering.

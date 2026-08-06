@@ -54,6 +54,13 @@ export const formatDateKey = (value) => {
   return `${year}-${month}-${day}`;
 };
 
+const formatShareDate = (date) =>
+  new Intl.DateTimeFormat("en-US", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  }).format(date);
+
 const addDays = (date, amount) => {
   const next = createLocalDate(date.getFullYear(), date.getMonth(), date.getDate());
   next.setDate(next.getDate() + amount);
@@ -71,6 +78,16 @@ export const getContributionLevel = (count) => {
   if (count < 25) return 2;
   if (count < 50) return 3;
   return 4;
+};
+
+export const getCalendarCellPeriod = (
+  { key, inYear },
+  { firstUseDate = null, todayKey = null } = {}
+) => {
+  if (!inYear) return "outside";
+  if (todayKey && key > todayKey) return "future";
+  if (!firstUseDate || key < firstUseDate) return "before-history";
+  return "history";
 };
 
 export const aggregateTimestamps = (timestamps) => {
@@ -214,7 +231,7 @@ const drawRoundedRect = (context, x, y, width, height, radius, fill, stroke) => 
   }
 };
 
-const drawShareYear = (context, { year, counts, x, y, fontFamily }) => {
+const drawShareYear = (context, { year, counts, x, y, fontFamily, bounds }) => {
   const calendar = buildYearCalendar(year, counts);
   const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
   const levelColors = ["#ebf1f5", "#c6e6f4", "#79c0e8", "#2b95d6", "#106ba3"];
@@ -222,29 +239,33 @@ const drawShareYear = (context, { year, counts, x, y, fontFamily }) => {
   const gridTop = y + GRAPH_TOP;
 
   context.fillStyle = "#293742";
-  context.font = `700 10px ${fontFamily}`;
+  context.font = `700 11px ${fontFamily}`;
   context.textAlign = "left";
-  context.fillText(String(year), x, y + 9);
+  context.fillText(String(year), x, y + 10);
 
   context.fillStyle = "#394b59";
-  context.font = `600 9px ${fontFamily}`;
+  context.font = `600 10px ${fontFamily}`;
   context.textAlign = "left";
   for (const { month, week } of calendar.monthColumns) {
-    context.fillText(monthNames[month], gridLeft + week * CELL_STEP, y + 9);
+    context.fillText(monthNames[month], gridLeft + week * CELL_STEP, y + 10);
   }
   for (const [weekday, label] of [[1, "Mon"], [3, "Wed"], [5, "Fri"]]) {
     context.fillText(label, x, gridTop + weekday * CELL_STEP + 8);
   }
 
   for (const cell of calendar.cells) {
-    if (!cell.inYear) continue;
+    const period = getCalendarCellPeriod(cell, bounds);
+    if (period === "outside" || period === "future") continue;
+    const cellX = gridLeft + cell.week * CELL_STEP;
+    const cellY = gridTop + cell.weekday * CELL_STEP;
+    if (period === "before-history") {
+      context.strokeStyle = "#d8e1e8";
+      context.lineWidth = 0.5;
+      context.strokeRect(cellX + 0.25, cellY + 0.25, CELL_SIZE - 0.5, CELL_SIZE - 0.5);
+      continue;
+    }
     context.fillStyle = levelColors[getContributionLevel(cell.count)];
-    context.fillRect(
-      gridLeft + cell.week * CELL_STEP,
-      gridTop + cell.weekday * CELL_STEP,
-      CELL_SIZE,
-      CELL_SIZE
-    );
+    context.fillRect(cellX, cellY, CELL_SIZE, CELL_SIZE);
   }
 };
 
@@ -286,15 +307,15 @@ export const createShareScreenshot = async ({
   );
   context.textAlign = "right";
   context.fillText(
-    now.toLocaleString(),
+    formatShareDate(now),
     layout.width - SHARE_PADDING,
     38
   );
 
   const statItems = [
-    ["DAYS IN ROAM", `${stats.daysInRoam.toLocaleString()}d`],
-    ["LONGEST STREAK", `${stats.longestStreak}d`],
-    ["CURRENT STREAK", `${stats.currentStreak}d`],
+    ["DAYS IN ROAM", stats.daysInRoam.toLocaleString()],
+    ["LONGEST STREAK", stats.longestStreak.toLocaleString()],
+    ["CURRENT STREAK", stats.currentStreak.toLocaleString()],
     ["BLOCKS", stats.totalBlocks.toLocaleString()],
   ];
   const statsY = 72;
@@ -328,6 +349,7 @@ export const createShareScreenshot = async ({
       x: SHARE_PADDING + column * (SHARE_PANEL_WIDTH + SHARE_PANEL_GAP),
       y: SHARE_HEADER_HEIGHT + row * (SHARE_PANEL_HEIGHT + SHARE_PANEL_GAP),
       fontFamily,
+      bounds: { firstUseDate: stats.firstUseDate, todayKey: formatDateKey(now) },
     });
   }
 
@@ -449,7 +471,7 @@ const createSvgElement = (tag, attributes = {}) => {
   return element;
 };
 
-const renderYearGraph = (year, counts) => {
+const renderYearGraph = (year, counts, bounds) => {
   const calendar = buildYearCalendar(year, counts);
   const width = GRAPH_LEFT + calendar.weekCount * CELL_STEP + 4;
   const height = GRAPH_TOP + 7 * CELL_STEP + 4;
@@ -471,7 +493,7 @@ const renderYearGraph = (year, counts) => {
 
   const yearLabel = createSvgElement("text", {
     x: 0,
-    y: 9,
+    y: 10,
     class: "rcg-year__year",
   });
   yearLabel.textContent = String(year);
@@ -480,7 +502,7 @@ const renderYearGraph = (year, counts) => {
   for (const { month, week } of calendar.monthColumns) {
     const label = createSvgElement("text", {
       x: GRAPH_LEFT + week * CELL_STEP,
-      y: 8,
+      y: 10,
       class: "rcg-year__label",
     });
     label.textContent = monthNames[month];
@@ -498,19 +520,23 @@ const renderYearGraph = (year, counts) => {
   }
 
   for (const cell of calendar.cells) {
+    const period = getCalendarCellPeriod(cell, bounds);
+    const cellClass = {
+      outside: "rcg-cell rcg-cell--outside",
+      future: "rcg-cell rcg-cell--future",
+      "before-history": "rcg-cell rcg-cell--before-history",
+    }[period] || `rcg-cell rcg-cell--level-${getContributionLevel(cell.count)}`;
     const rect = createSvgElement("rect", {
       x: GRAPH_LEFT + cell.week * CELL_STEP,
       y: GRAPH_TOP + cell.weekday * CELL_STEP,
       width: CELL_SIZE,
       height: CELL_SIZE,
       rx: 1.5,
-      class: cell.inYear
-        ? `rcg-cell rcg-cell--level-${getContributionLevel(cell.count)}`
-        : "rcg-cell rcg-cell--outside",
+      class: cellClass,
       "data-date": cell.key,
       "data-count": cell.count,
     });
-    if (cell.inYear) {
+    if (period === "history") {
       const title = createSvgElement("title");
       title.textContent = `${cell.count} block${cell.count === 1 ? "" : "s"} on ${cell.key}`;
       rect.appendChild(title);
@@ -540,11 +566,11 @@ const renderStats = (container, counts) => {
   const values = [
     [
       "Days in Roam",
-      `${stats.daysInRoam.toLocaleString()}d`,
+      stats.daysInRoam.toLocaleString(),
       stats.firstUseDate ? `Since the first dated block on ${stats.firstUseDate}` : "No dated blocks yet",
     ],
-    ["Longest streak", `${stats.longestStreak}d`, "Longest consecutive run of active days"],
-    ["Current streak", `${stats.currentStreak}d`, "Consecutive active days through today"],
+    ["Longest streak", stats.longestStreak.toLocaleString(), "Longest consecutive run of active days"],
+    ["Current streak", stats.currentStreak.toLocaleString(), "Consecutive active days through today"],
     ["Blocks", stats.totalBlocks.toLocaleString(), "All dated blocks in the selected scope"],
   ];
   container.replaceChildren(
@@ -563,8 +589,11 @@ const renderStats = (container, counts) => {
 const renderHistory = (container, counts) => {
   const yearsGrid = createElement("div", "rcg-years");
   const years = getHistoryYears(counts);
+  const now = new Date();
+  const stats = calculateStats(counts, now);
+  const bounds = { firstUseDate: stats.firstUseDate, todayKey: formatDateKey(now) };
   yearsGrid.setAttribute("aria-label", `Complete history from ${years.at(-1)} to ${years[0]}`);
-  for (const year of years) yearsGrid.appendChild(renderYearGraph(year, counts));
+  for (const year of years) yearsGrid.appendChild(renderYearGraph(year, counts, bounds));
   container.replaceChildren(yearsGrid, renderLegend());
 };
 

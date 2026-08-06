@@ -159,6 +159,7 @@ const installFakeDom = () => {
     createElementNS: (_namespace, tag) => new FakeElement(tag, documentRef),
     getElementById: (id) => findById(documentRef.body, id),
     querySelector: (selector) => documentRef.body.querySelector(selector),
+    querySelectorAll: (selector) => documentRef.body.querySelectorAll(selector),
     addEventListener: (type, handler) => {
       const handlers = documentListeners.get(type) || [];
       handlers.push(handler);
@@ -253,6 +254,29 @@ test("returning to a recently loaded scope reuses its cache", async () => {
     scope.dispatchEvent({ type: "change" });
     await new Promise((resolve) => setTimeout(resolve, 10));
     assert.equal(queryCalls, 2);
+  } finally {
+    controller.destroy();
+    dom.restore();
+  }
+});
+
+test("live metric values do not duplicate day units", async () => {
+  const dom = installFakeDom();
+  const api = {
+    user: { uid: () => "user-123" },
+    data: { async: { q: async () => [[1, Date.now()]] } },
+  };
+  const controller = createExtensionController({ extensionAPI: createExtensionApi(), api });
+
+  try {
+    controller.init();
+    controller.open();
+    await waitFor(() => !document.querySelector(".rcg-share").disabled, "history did not load");
+    const values = document
+      .querySelectorAll(".rcg-stat__value")
+      .map((element) => element.textContent);
+    assert.equal(values.length, 4);
+    assert.ok(values.every((value) => !value.endsWith("d")));
   } finally {
     controller.destroy();
     dom.restore();

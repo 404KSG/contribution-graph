@@ -280,7 +280,7 @@
 .rcg-year__year {
   fill: var(--rcg-muted);
   font-family: inherit;
-  font-size: 9px;
+  font-size: 10px;
   font-weight: 600;
 }
 
@@ -297,6 +297,18 @@
 .rcg-cell--outside {
   fill: transparent;
   stroke: transparent;
+}
+
+.rcg-cell--future {
+  fill: transparent;
+  stroke: transparent;
+}
+
+.rcg-cell--before-history {
+  fill: transparent;
+  stroke: var(--rcg-border);
+  stroke-width: 0.5;
+  opacity: 0.45;
 }
 
 .rcg-cell--level-0,

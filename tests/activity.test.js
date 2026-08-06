@@ -13,6 +13,7 @@ import {
   deliverShareScreenshot,
   formatLoadedStatus,
   formatDateKey,
+  getCalendarCellPeriod,
   getContributionLevel,
   getHistoryYears,
   queryCreationTimestamps,
@@ -74,6 +75,26 @@ test("history years include gaps through the current year", () => {
   assert.deepEqual(getHistoryYears({ "2023-04-01": 1 }, 2026), [2026, 2025, 2024, 2023]);
 });
 
+test("calendar cells distinguish pre-history, recorded history, and future dates", () => {
+  const bounds = { firstUseDate: "2020-10-20", todayKey: "2026-08-06" };
+  assert.equal(
+    getCalendarCellPeriod({ key: "2019-12-31", inYear: false }, bounds),
+    "outside"
+  );
+  assert.equal(
+    getCalendarCellPeriod({ key: "2020-01-01", inYear: true }, bounds),
+    "before-history"
+  );
+  assert.equal(
+    getCalendarCellPeriod({ key: "2020-10-20", inYear: true }, bounds),
+    "history"
+  );
+  assert.equal(
+    getCalendarCellPeriod({ key: "2026-08-07", inYear: true }, bounds),
+    "future"
+  );
+});
+
 test("loaded status stays minimal and reports only scope and year coverage", () => {
   assert.equal(
     formatLoadedStatus({
@@ -100,6 +121,7 @@ test("share image layout includes every history year in a compact grid", () => {
 test("share screenshot renderer draws the complete history to a PNG", async () => {
   let fillRects = 0;
   const filledRects = [];
+  const strokedRects = [];
   const drawnText = [];
   const drawnTextEntries = [];
   const drawnFonts = [];
@@ -108,6 +130,9 @@ test("share screenshot renderer draws the complete history to a PNG", async () =
     roundRect() {},
     fill() {},
     stroke() {},
+    strokeRect(...args) {
+      strokedRects.push(args);
+    },
     scale() {},
     fillRect(...args) {
       fillRects += 1;
@@ -136,8 +161,12 @@ test("share screenshot renderer draws the complete history to a PNG", async () =
   assert.equal(result.width, 900);
   assert.equal(canvas.width, 2_700);
   assert.equal(context.imageSmoothingEnabled, false);
-  assert.ok(fillRects > 1_000, "all three calendar years should be drawn");
+  assert.ok(fillRects > 800, "recorded history should be drawn");
+  assert.ok(fillRects < 1_000, "future dates should not be drawn as empty activity cells");
+  assert.ok(strokedRects.length > 0, "dates before the first block should use faint outlines");
   assert.ok(drawnText.includes("DAYS IN ROAM"));
+  assert.ok(drawnText.includes("890"));
+  assert.ok(!drawnText.some((value) => /^\d[\d,]*d$/.test(value)));
   assert.deepEqual(
     drawnText.filter((value) =>
       ["DAYS IN ROAM", "LONGEST STREAK", "CURRENT STREAK", "BLOCKS"].includes(value)
@@ -148,6 +177,8 @@ test("share screenshot renderer draws the complete history to a PNG", async () =
   assert.ok(
     drawnText.includes("Entire graph · Complete block history · 2024–2026 · @RoamResearch")
   );
+  assert.ok(drawnText.includes("August 6, 2026"));
+  assert.ok(!drawnText.some((value) => /\d{1,2}:\d{2}/.test(value)));
   assert.ok(!drawnText.includes("@RoamResearch · Contribution Graph"));
   assert.equal(drawnText.filter((value) => value === "Less").length, 1);
   assert.equal(drawnText.filter((value) => value === "More").length, 1);
@@ -156,6 +187,10 @@ test("share screenshot renderer draws the complete history to a PNG", async () =
   assert.ok(lastLegendCell[0] + lastLegendCell[2] < moreLabel.x);
   assert.equal(lastLegendCell[1] + lastLegendCell[3] / 2, moreLabel.y);
   assert.ok(drawnFonts.every((font) => font.includes("-apple-system")));
+  assert.ok(
+    drawnFonts.some((font) => font.startsWith("600 10px")),
+    "calendar labels should remain legible in the exported image"
+  );
 });
 
 test("share screenshot falls back to a local PNG download", async () => {

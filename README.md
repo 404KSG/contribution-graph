@@ -13,6 +13,7 @@ This fork is a ground-up, dependency-free rewrite of [Dagulf795/contribution-gra
   - 25-49 blocks
   - 50+ blocks
 - Total blocks, elapsed days in Roam since the first dated block, current streak, and longest streak
+- Clear calendar periods: future dates are blank, dates before the first block use a faint outline, and true zero-activity history uses the lightest filled level
 - Entire graph by default
 - Optional current-Roam-user scope for multiplayer graphs
 - A complete-history PNG export through **Share Screenshot**
@@ -42,6 +43,7 @@ Inside the dialog:
 
 - switch between **Entire graph** and **Current Roam user** when Roam exposes the current user UID;
 - press **Share Screenshot** to export every rendered year, including years below the visible scroll area;
+- exported metrics stay unit-free and the header uses a stable date-only label;
 - press the Blueprint **refresh icon** to bypass the short memory cache;
 - hover a cell to see its exact date and block count;
 - press `Escape`, the close button, or the backdrop to close.
