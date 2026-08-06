@@ -140,7 +140,7 @@ test("share screenshot renderer draws the complete history to a PNG", async () =
     },
     fillText(value, x, y) {
       drawnText.push(value);
-      drawnTextEntries.push({ value, x, y });
+      drawnTextEntries.push({ value, x, y, textAlign: this.textAlign });
       drawnFonts.push(this.font);
     },
     moveTo() {},
@@ -173,6 +173,18 @@ test("share screenshot renderer draws the complete history to a PNG", async () =
     ),
     ["DAYS IN ROAM", "LONGEST STREAK", "CURRENT STREAK", "BLOCKS"]
   );
+  for (const label of [
+    "DAYS IN ROAM",
+    "LONGEST STREAK",
+    "CURRENT STREAK",
+    "BLOCKS",
+  ]) {
+    assert.equal(
+      drawnTextEntries.find((entry) => entry.value === label)?.textAlign,
+      "center",
+      `${label} should be centered in its stat cell`
+    );
+  }
   assert.ok(!drawnText.includes("ACTIVE DAYS"));
   assert.ok(
     drawnText.includes("Entire graph · Complete block history · 2024–2026 · @RoamResearch")

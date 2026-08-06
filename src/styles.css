@@ -190,6 +190,7 @@
   min-width: 0;
   padding: 6px 10px;
   border-left: 1px solid var(--rcg-border);
+  text-align: center;
 }
 
 .rcg-stat:first-child {
@@ -197,6 +198,7 @@
 }
 
 .rcg-stat__value {
+  width: 100%;
   overflow: hidden;
   color: var(--rcg-text);
   font-family: inherit;
@@ -205,6 +207,7 @@
   font-variant-numeric: tabular-nums;
   line-height: 1.15;
   text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .rcg-stat__label {

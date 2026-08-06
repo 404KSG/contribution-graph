@@ -331,13 +331,14 @@ export const createShareScreenshot = async ({
       context.lineTo(statX, statsY + 46);
       context.stroke();
     }
+    const statCenterX = statX + statWidth / 2;
     context.fillStyle = "#182026";
     context.font = `600 16px ${fontFamily}`;
-    context.textAlign = "left";
-    context.fillText(value, statX + 12, statsY + 22);
+    context.textAlign = "center";
+    context.fillText(value, statCenterX, statsY + 22);
     context.fillStyle = "#394b59";
     context.font = `600 9px ${fontFamily}`;
-    context.fillText(label, statX + 12, statsY + 39);
+    context.fillText(label, statCenterX, statsY + 39);
   }
 
   for (const [index, year] of layout.years.entries()) {
