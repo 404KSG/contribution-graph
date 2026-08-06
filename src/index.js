@@ -4,19 +4,19 @@ const COMMAND_LABEL = "Contribution Graph: Open complete history";
 const SHOW_BUTTON_SETTING = "showTopbarButton";
 const CACHE_TTL_MS = 60_000;
 const SVG_NS = "http://www.w3.org/2000/svg";
-const CELL_SIZE = 11;
-const CELL_GAP = 3;
+const CELL_SIZE = 7;
+const CELL_GAP = 2;
 const CELL_STEP = CELL_SIZE + CELL_GAP;
-const GRAPH_TOP = 24;
-const GRAPH_LEFT = 32;
+const GRAPH_TOP = 17;
+const GRAPH_LEFT = 24;
 
-export const ALL_BLOCKS_QUERY = `[:find ?time
+export const ALL_BLOCKS_QUERY = `[:find ?entity ?time
   :timeout 60000
   :where
   [?entity :block/string]
   [?entity :create/time ?time]]`;
 
-export const OWN_BLOCKS_QUERY = `[:find ?time
+export const OWN_BLOCKS_QUERY = `[:find ?entity ?time
   :timeout 60000
   :in $ ?user-uid
   :where
@@ -182,7 +182,7 @@ export const queryCreationTimestamps = async ({ api, scope = "all", userUid = nu
   );
 
   return (Array.isArray(rows) ? rows : [])
-    .map((row) => (Array.isArray(row) ? row[0] : row))
+    .map((row) => (Array.isArray(row) ? row[row.length - 1] : row))
     .filter((timestamp) => Number.isFinite(timestamp));
 };
 
@@ -203,10 +203,20 @@ const createSvgElement = (tag, attributes = {}) => {
 
 const renderYearGraph = (year, counts) => {
   const calendar = buildYearCalendar(year, counts);
-  const width = GRAPH_LEFT + calendar.weekCount * CELL_STEP + 8;
-  const height = GRAPH_TOP + 7 * CELL_STEP + 10;
+  const width = GRAPH_LEFT + calendar.weekCount * CELL_STEP + 4;
+  const height = GRAPH_TOP + 7 * CELL_STEP + 4;
+  const yearCells = calendar.cells.filter((cell) => cell.inYear);
+  const yearTotal = yearCells.reduce((total, cell) => total + cell.count, 0);
+  const activeDays = yearCells.filter((cell) => cell.count > 0).length;
   const section = createElement("section", "rcg-year");
+  const headingRow = createElement("div", "rcg-year__header");
   const heading = createElement("h3", "rcg-year__heading", String(year));
+  const summary = createElement(
+    "span",
+    "rcg-year__summary",
+    `${yearTotal.toLocaleString()} blocks · ${activeDays.toLocaleString()} active days`
+  );
+  headingRow.append(heading, summary);
   const scroller = createElement("div", "rcg-year__scroller");
   const svg = createSvgElement("svg", {
     class: "rcg-year__svg",
@@ -221,7 +231,7 @@ const renderYearGraph = (year, counts) => {
   for (const { month, week } of calendar.monthColumns) {
     const label = createSvgElement("text", {
       x: GRAPH_LEFT + week * CELL_STEP,
-      y: 11,
+      y: 8,
       class: "rcg-year__label",
     });
     label.textContent = monthNames[month];
@@ -244,7 +254,7 @@ const renderYearGraph = (year, counts) => {
       y: GRAPH_TOP + cell.weekday * CELL_STEP,
       width: CELL_SIZE,
       height: CELL_SIZE,
-      rx: 2,
+      rx: 1.5,
       class: cell.inYear
         ? `rcg-cell rcg-cell--level-${getContributionLevel(cell.count)}`
         : "rcg-cell rcg-cell--outside",
@@ -260,7 +270,7 @@ const renderYearGraph = (year, counts) => {
   }
 
   scroller.appendChild(svg);
-  section.append(heading, scroller);
+  section.append(headingRow, scroller);
   return section;
 };
 
@@ -297,11 +307,20 @@ const renderStats = (container, counts) => {
 };
 
 const renderHistory = (container, counts) => {
-  const fragment = document.createDocumentFragment();
+  const yearsGrid = createElement("div", "rcg-years");
   const years = getHistoryYears(counts);
-  for (const year of years) fragment.appendChild(renderYearGraph(year, counts));
-  fragment.appendChild(renderLegend());
-  container.replaceChildren(fragment);
+  yearsGrid.setAttribute("aria-label", `Complete history from ${years.at(-1)} to ${years[0]}`);
+  for (const year of years) yearsGrid.appendChild(renderYearGraph(year, counts));
+  container.replaceChildren(yearsGrid, renderLegend());
+};
+
+const formatLoadedStatus = ({ scope, counts, cached = false }) => {
+  const years = getHistoryYears(counts);
+  const range = years[0] === years.at(-1) ? String(years[0]) : `${years.at(-1)}–${years[0]}`;
+  const total = calculateStats(counts).totalBlocks.toLocaleString();
+  const source = scope === "all" ? "Entire graph" : "Current user";
+  const freshness = cached ? "cached" : `updated ${new Date().toLocaleTimeString()}`;
+  return `${source} · ${range} · ${total} blocks · ${freshness}`;
 };
 
 const getCurrentUserUid = (api) => {
@@ -376,25 +395,21 @@ export const createExtensionController = ({ extensionAPI, api = window.roamAlpha
     dialog.setAttribute("aria-labelledby", "rcg-title");
 
     const header = createElement("header", "rcg-header");
-    const titleGroup = createElement("div");
+    const mark = createElement("span", "rcg-mark", "▦");
+    mark.setAttribute("aria-hidden", "true");
+    const titleGroup = createElement("div", "rcg-heading");
     const title = createElement("h2", "rcg-title", "Contribution Graph");
     title.id = "rcg-title";
     titleGroup.append(
       title,
       createElement("p", "rcg-subtitle", "Complete Roam block creation history")
     );
-    const closeButton = createElement("button", "bp3-button bp3-minimal rcg-close", "×");
-    closeButton.type = "button";
-    closeButton.setAttribute("aria-label", "Close contribution graph");
-    closeButton.addEventListener("click", close);
-    header.append(titleGroup, closeButton);
-
-    const toolbar = createElement("div", "rcg-toolbar");
+    const actions = createElement("div", "rcg-actions");
     const scopeLabel = createElement("label", "rcg-scope");
-    scopeLabel.appendChild(createElement("span", "", "Scope"));
+    scopeLabel.appendChild(createElement("span", "rcg-visually-hidden", "History scope"));
     const scope = createElement("select", "bp3-input rcg-scope__select");
     scope.name = "scope";
-    const allOption = createElement("option", "", "All authors");
+    const allOption = createElement("option", "", "Entire graph");
     allOption.value = "all";
     scope.appendChild(allOption);
     if (userUid) {
@@ -402,23 +417,33 @@ export const createExtensionController = ({ extensionAPI, api = window.roamAlpha
       ownOption.value = "own";
       scope.appendChild(ownOption);
     }
+    scope.value = "all";
     scope.addEventListener("change", () => void load(true));
     scopeLabel.appendChild(scope);
-    const refresh = createElement("button", "bp3-button rcg-refresh", "Refresh full history");
+    const refresh = createElement("button", "bp3-button rcg-refresh", "↻ Refresh");
     refresh.type = "button";
     refresh.addEventListener("click", () => void load(true));
-    toolbar.append(scopeLabel, refresh);
+    const closeButton = createElement("button", "bp3-button bp3-minimal rcg-close", "×");
+    closeButton.type = "button";
+    closeButton.setAttribute("aria-label", "Close contribution graph");
+    closeButton.addEventListener("click", close);
+    actions.append(scopeLabel, refresh, closeButton);
+    header.append(mark, titleGroup, actions);
 
     const note = createElement(
       "p",
       "rcg-note",
-      "Counts new blocks. Imports and Agents acting as the selected user may also contribute. Data stays in this browser."
+      "Every dated block is included. Imports and Agents count under their creator. Data stays in this browser."
     );
     const status = createElement("div", "rcg-status", "Open the graph to load activity.");
     status.setAttribute("role", "status");
     const stats = createElement("div", "rcg-stats");
+    const overviewMeta = createElement("div", "rcg-overview__meta");
+    overviewMeta.append(status, note);
+    const overview = createElement("section", "rcg-overview");
+    overview.append(stats, overviewMeta);
     const content = createElement("div", "rcg-content");
-    dialog.append(header, toolbar, note, status, stats, content);
+    dialog.append(header, overview, content);
     overlay.appendChild(dialog);
     overlay.addEventListener("pointerdown", (event) => {
       if (event.target === overlay) close();
@@ -438,7 +463,7 @@ export const createExtensionController = ({ extensionAPI, api = window.roamAlpha
     if (!force && cached && Date.now() - cached.loadedAt < CACHE_TTL_MS) {
       renderStats(stats, cached.counts);
       renderHistory(content, cached.counts);
-      status.textContent = `Loaded ${cached.rowCount.toLocaleString()} blocks from memory.`;
+      status.textContent = formatLoadedStatus({ scope, counts: cached.counts, cached: true });
       return;
     }
 
@@ -460,7 +485,7 @@ export const createExtensionController = ({ extensionAPI, api = window.roamAlpha
       cache.set(scope, { counts, rowCount: timestamps.length, loadedAt: Date.now() });
       renderStats(stats, counts);
       renderHistory(content, counts);
-      status.textContent = `${getHistoryYears(counts).length} year(s), ${timestamps.length.toLocaleString()} blocks. Refreshed ${new Date().toLocaleTimeString()}.`;
+      status.textContent = formatLoadedStatus({ scope, counts });
     } catch (error) {
       if (destroyed || version !== loadVersion) return;
       content.replaceChildren();

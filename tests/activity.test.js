@@ -90,31 +90,37 @@ test("stats calculate totals and streaks", () => {
 });
 
 test("query selection prefers Roam's asynchronous API", async () => {
+  assert.match(ALL_BLOCKS_QUERY, /:find \?entity \?time/);
+  assert.match(OWN_BLOCKS_QUERY, /:find \?entity \?time/);
   const calls = [];
   const api = {
     data: {
       async: {
         q: async (...args) => {
           calls.push(args);
-          return [[1], [2], ["invalid"]];
+          return [[101, 1], [102, 1], [103, 2], [104, "invalid"]];
         },
       },
       fast: { q: () => assert.fail("async API should be preferred") },
     },
   };
 
-  assert.deepEqual(await queryCreationTimestamps({ api, scope: "all" }), [1, 2]);
+  assert.deepEqual(
+    await queryCreationTimestamps({ api, scope: "all" }),
+    [1, 1, 2],
+    "different entities sharing a timestamp must all be counted"
+  );
   assert.equal(calls[0][0], ALL_BLOCKS_QUERY);
   assert.deepEqual(
     await queryCreationTimestamps({ api, scope: "own", userUid: "user-123" }),
-    [1, 2]
+    [1, 1, 2]
   );
   assert.equal(calls[1][0], OWN_BLOCKS_QUERY);
   assert.equal(calls[1][1], "user-123");
 });
 
 test("query selection falls back to the synchronous API", async () => {
-  const api = { data: { q: () => [[3], [4]] } };
+  const api = { data: { q: () => [[201, 3], [202, 4]] } };
   assert.deepEqual(await queryCreationTimestamps({ api }), [3, 4]);
 });
 
