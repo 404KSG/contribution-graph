@@ -4,7 +4,7 @@ const COMMAND_LABEL = "Contribution Graph: Open complete history";
 const SHOW_BUTTON_SETTING = "showTopbarButton";
 const CACHE_TTL_MS = 60_000;
 const SVG_NS = "http://www.w3.org/2000/svg";
-const CELL_SIZE = 10;
+const CELL_SIZE = 11;
 const CELL_GAP = 3;
 const CELL_STEP = CELL_SIZE + CELL_GAP;
 const GRAPH_TOP = 18;
@@ -219,13 +219,13 @@ const drawShareYear = (context, { year, counts, x, y, fontFamily }) => {
   const gridLeft = x + GRAPH_LEFT;
   const gridTop = y + GRAPH_TOP;
 
-  context.fillStyle = "#394b59";
-  context.font = `600 10px ${fontFamily}`;
+  context.fillStyle = "#293742";
+  context.font = `700 10px ${fontFamily}`;
   context.textAlign = "left";
   context.fillText(String(year), x, y + 9);
 
-  context.fillStyle = "#5c7080";
-  context.font = `500 9px ${fontFamily}`;
+  context.fillStyle = "#394b59";
+  context.font = `600 9px ${fontFamily}`;
   context.textAlign = "left";
   for (const { month, week } of calendar.monthColumns) {
     context.fillText(monthNames[month], gridLeft + week * CELL_STEP, y + 9);
@@ -277,8 +277,8 @@ export const createShareScreenshot = async ({
   context.font = `600 23px ${fontFamily}`;
   context.textAlign = "left";
   context.fillText("Contribution Graph", SHARE_PADDING, 38);
-  context.fillStyle = "#5c7080";
-  context.font = `12px ${fontFamily}`;
+  context.fillStyle = "#394b59";
+  context.font = `600 12px ${fontFamily}`;
   context.fillText(
     `${scopeLabel} · Complete Roam block history · ${range}`,
     SHARE_PADDING,
@@ -293,7 +293,6 @@ export const createShareScreenshot = async ({
 
   const statItems = [
     ["BLOCKS", stats.totalBlocks.toLocaleString()],
-    ["ACTIVE DAYS", stats.activeDays.toLocaleString()],
     ["DAYS IN ROAM", `${stats.daysInRoam.toLocaleString()}d`],
     ["CURRENT STREAK", `${stats.currentStreak}d`],
     ["LONGEST STREAK", `${stats.longestStreak}d`],
@@ -312,11 +311,11 @@ export const createShareScreenshot = async ({
       context.stroke();
     }
     context.fillStyle = "#182026";
-    context.font = `500 16px ${fontFamily}`;
+    context.font = `600 16px ${fontFamily}`;
     context.textAlign = "left";
     context.fillText(value, statX + 12, statsY + 22);
-    context.fillStyle = "#5c7080";
-    context.font = `500 9px ${fontFamily}`;
+    context.fillStyle = "#394b59";
+    context.font = `600 9px ${fontFamily}`;
     context.fillText(label, statX + 12, statsY + 39);
   }
 
@@ -333,8 +332,8 @@ export const createShareScreenshot = async ({
   }
 
   const footerY = layout.height - 21;
-  context.fillStyle = "#5c7080";
-  context.font = `9px ${fontFamily}`;
+  context.fillStyle = "#394b59";
+  context.font = `600 9px ${fontFamily}`;
   context.textAlign = "left";
   context.fillText("@RoamResearch · Contribution Graph", SHARE_PADDING, footerY);
   context.textAlign = "right";
@@ -343,7 +342,7 @@ export const createShareScreenshot = async ({
     context.fillStyle = ["#ebf1f5", "#c6e6f4", "#79c0e8", "#2b95d6", "#106ba3"][level];
     context.fillRect(layout.width - SHARE_PADDING - 61 + level * 10, footerY - 8, 7, 7);
   }
-  context.fillStyle = "#738694";
+  context.fillStyle = "#394b59";
   context.fillText("More", layout.width - SHARE_PADDING, footerY);
 
   const blob = await new Promise((resolve, reject) => {
@@ -540,7 +539,6 @@ const renderStats = (container, counts) => {
   const stats = calculateStats(counts);
   const values = [
     ["Blocks", stats.totalBlocks.toLocaleString(), "All dated blocks in the selected scope"],
-    ["Active days", stats.activeDays.toLocaleString(), "Days containing at least one created block"],
     [
       "Days in Roam",
       `${stats.daysInRoam.toLocaleString()}d`,
@@ -716,21 +714,18 @@ export const createExtensionController = ({ extensionAPI, api = window.roamAlpha
     dialog.setAttribute("aria-labelledby", "rcg-title");
 
     const header = createElement("header", "bp3-dialog-header rcg-header");
-    const mark = createElement("span", "bp3-icon bp3-icon-heat-grid rcg-mark");
-    mark.setAttribute("aria-hidden", "true");
     const titleGroup = createElement("div", "rcg-heading");
     const title = createElement("h2", "bp3-heading rcg-title", "Contribution Graph");
     title.id = "rcg-title";
+    const subline = createElement("div", "rcg-subline");
+    subline.append(
+      createElement("p", "rcg-subtitle", "Complete Roam block creation history"),
+      createElement("span", "rcg-roam-attribution", "@RoamResearch")
+    );
     titleGroup.append(
       title,
-      createElement("p", "rcg-subtitle", "Complete Roam block creation history")
+      subline
     );
-    const roamBadge = createElement(
-      "span",
-      "bp3-tag bp3-minimal rcg-roam-badge",
-      "@RoamResearch"
-    );
-    roamBadge.title = "Built for Roam Research";
     const actions = createElement("div", "rcg-actions");
     const scopeLabel = createElement("label", "rcg-scope");
     scopeLabel.appendChild(createElement("span", "rcg-visually-hidden", "History scope"));
@@ -775,7 +770,7 @@ export const createExtensionController = ({ extensionAPI, api = window.roamAlpha
     closeButton.setAttribute("aria-label", "Close contribution graph");
     closeButton.addEventListener("click", close);
     actions.append(scopeLabel, shareButton, refresh, closeButton);
-    header.append(mark, titleGroup, roamBadge, actions);
+    header.append(titleGroup, actions);
 
     const status = createElement("div", "rcg-status", "Open the graph to load activity.");
     status.setAttribute("role", "status");

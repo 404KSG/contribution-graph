@@ -132,6 +132,7 @@ test("share screenshot renderer draws the complete history to a PNG", async () =
   assert.equal(context.imageSmoothingEnabled, false);
   assert.ok(fillRects > 1_000, "all three calendar years should be drawn");
   assert.ok(drawnText.includes("DAYS IN ROAM"));
+  assert.ok(!drawnText.includes("ACTIVE DAYS"));
   assert.ok(drawnText.includes("@RoamResearch · Contribution Graph"));
 });
 
