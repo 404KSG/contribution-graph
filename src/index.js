@@ -332,18 +332,17 @@ export const createShareScreenshot = async ({
   }
 
   const footerY = layout.height - 21;
+  const legendX = layout.width - SHARE_PADDING - 106;
   context.fillStyle = "#394b59";
   context.font = `600 9px ${fontFamily}`;
   context.textAlign = "left";
-  context.fillText("@RoamResearch · Contribution Graph", SHARE_PADDING, footerY);
-  context.textAlign = "right";
-  context.fillText("Less", layout.width - SHARE_PADDING - 86, footerY);
+  context.fillText("Less", legendX, footerY);
   for (let level = 0; level <= 4; level += 1) {
     context.fillStyle = ["#ebf1f5", "#c6e6f4", "#79c0e8", "#2b95d6", "#106ba3"][level];
-    context.fillRect(layout.width - SHARE_PADDING - 61 + level * 10, footerY - 8, 7, 7);
+    context.fillRect(legendX + 27 + level * 10, footerY - 8, 7, 7);
   }
   context.fillStyle = "#394b59";
-  context.fillText("More", layout.width - SHARE_PADDING, footerY);
+  context.fillText("More", legendX + 82, footerY);
 
   const blob = await new Promise((resolve, reject) => {
     canvas.toBlob(

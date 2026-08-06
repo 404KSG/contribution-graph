@@ -99,7 +99,9 @@ test("share image layout includes every history year in a compact grid", () => {
 
 test("share screenshot renderer draws the complete history to a PNG", async () => {
   let fillRects = 0;
+  const filledRects = [];
   const drawnText = [];
+  const drawnTextEntries = [];
   const drawnFonts = [];
   const context = {
     beginPath() {},
@@ -107,11 +109,13 @@ test("share screenshot renderer draws the complete history to a PNG", async () =
     fill() {},
     stroke() {},
     scale() {},
-    fillRect() {
+    fillRect(...args) {
       fillRects += 1;
+      filledRects.push(args);
     },
-    fillText(value) {
+    fillText(value, x, y) {
       drawnText.push(value);
+      drawnTextEntries.push({ value, x, y });
       drawnFonts.push(this.font);
     },
     moveTo() {},
@@ -138,7 +142,12 @@ test("share screenshot renderer draws the complete history to a PNG", async () =
   assert.ok(
     drawnText.includes("Entire graph · Complete Roam block history · 2024–2026 · @RoamResearch")
   );
-  assert.ok(drawnText.includes("@RoamResearch · Contribution Graph"));
+  assert.ok(!drawnText.includes("@RoamResearch · Contribution Graph"));
+  assert.equal(drawnText.filter((value) => value === "Less").length, 1);
+  assert.equal(drawnText.filter((value) => value === "More").length, 1);
+  const moreLabel = drawnTextEntries.find(({ value }) => value === "More");
+  const lastLegendCell = filledRects.at(-1);
+  assert.ok(lastLegendCell[0] + lastLegendCell[2] < moreLabel.x);
   assert.ok(drawnFonts.every((font) => font.includes("-apple-system")));
 });
 
