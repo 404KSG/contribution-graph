@@ -280,7 +280,7 @@ export const createShareScreenshot = async ({
   context.fillStyle = "#394b59";
   context.font = `600 12px ${fontFamily}`;
   context.fillText(
-    `${scopeLabel} · Complete Roam block history · ${range} · @RoamResearch`,
+    `${scopeLabel} · Complete block history · ${range} · @RoamResearch`,
     SHARE_PADDING,
     61
   );
@@ -719,7 +719,7 @@ export const createExtensionController = ({ extensionAPI, api = window.roamAlpha
     title.id = "rcg-title";
     const subline = createElement("div", "rcg-subline");
     subline.append(
-      createElement("p", "rcg-subtitle", "Complete Roam block creation history"),
+      createElement("p", "rcg-subtitle", "Complete block creation history ·"),
       createElement("span", "rcg-roam-attribution", "@RoamResearch")
     );
     titleGroup.append(

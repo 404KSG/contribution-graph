@@ -28,6 +28,8 @@ Annual SVGs display at their native dimensions instead of being fractionally sca
 
 The final type hierarchy uses Roam and Blueprint's macOS-first UI sans-serif stack with high-contrast Blueprint dark gray: year labels are bold, calendar labels semibold, and secondary UI text semibold. Screenshot rendering uses that same fixed UI stack instead of reading Roam's page-body font, because graph themes may assign a serif face to body content. `@RoamResearch` follows the subtitle as plain text without badge chrome or shadow and appears at the end of the screenshot subtitle. The screenshot footer contains only one right-aligned Less-to-More legend, with explicit spacing between its cells and labels. The decorative dialog icon is removed so the title aligns directly with the content rail.
 
+Avoid repeating the product name immediately before the attribution. The live line reads `Complete block creation history · @RoamResearch`; the shared-image line uses `Complete block history` before its range and attribution.
+
 Add `Days in Roam` as elapsed calendar days from the first dated block through today, inclusive. Keep active-day calculation internally for annual tooltips and streak logic, but remove it from the summary rail and shared image to reduce competing metrics. Expose the first block date as the metric tooltip and include the elapsed duration in shared images.
 
 Use the same longevity-first order in the live summary rail and shared-image metrics: `Days in Roam`, `Longest streak`, `Current streak`, then `Blocks`. Align the screenshot legend labels and its five cells to one explicit vertical center so the compact footer remains optically level.

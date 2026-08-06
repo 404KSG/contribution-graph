@@ -146,7 +146,7 @@ test("share screenshot renderer draws the complete history to a PNG", async () =
   );
   assert.ok(!drawnText.includes("ACTIVE DAYS"));
   assert.ok(
-    drawnText.includes("Entire graph · Complete Roam block history · 2024–2026 · @RoamResearch")
+    drawnText.includes("Entire graph · Complete block history · 2024–2026 · @RoamResearch")
   );
   assert.ok(!drawnText.includes("@RoamResearch · Contribution Graph"));
   assert.equal(drawnText.filter((value) => value === "Less").length, 1);
