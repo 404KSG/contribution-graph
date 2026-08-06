@@ -292,8 +292,8 @@ export const createShareScreenshot = async ({
   );
 
   const statItems = [
-    ["BLOCKS", stats.totalBlocks.toLocaleString()],
     ["DAYS IN ROAM", `${stats.daysInRoam.toLocaleString()}d`],
+    ["BLOCKS", stats.totalBlocks.toLocaleString()],
     ["CURRENT STREAK", `${stats.currentStreak}d`],
     ["LONGEST STREAK", `${stats.longestStreak}d`],
   ];
@@ -537,12 +537,12 @@ const renderLegend = () => {
 const renderStats = (container, counts) => {
   const stats = calculateStats(counts);
   const values = [
-    ["Blocks", stats.totalBlocks.toLocaleString(), "All dated blocks in the selected scope"],
     [
       "Days in Roam",
       `${stats.daysInRoam.toLocaleString()}d`,
       stats.firstUseDate ? `Since the first dated block on ${stats.firstUseDate}` : "No dated blocks yet",
     ],
+    ["Blocks", stats.totalBlocks.toLocaleString(), "All dated blocks in the selected scope"],
     ["Current streak", `${stats.currentStreak}d`, "Consecutive active days through today"],
     ["Longest streak", `${stats.longestStreak}d`, "Longest consecutive run of active days"],
   ];
