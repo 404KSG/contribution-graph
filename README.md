@@ -2,6 +2,10 @@
 
 See your complete Roam block creation history as a contribution heatmap, from your earliest block through today. Every year stays visible in one compact view.
 
+| Roam view | Complete PNG export |
+| :---: | :---: |
+| ![Contribution Graph displayed inside Roam Research](https://raw.githubusercontent.com/404KSG/contribution-graph/b81ebd3bd972ab9840137df8deffcbd49bc6fc5c/docs/images/contribution-graph-dialog.png) | ![Complete contribution history exported as a PNG](https://raw.githubusercontent.com/404KSG/contribution-graph/b81ebd3bd972ab9840137df8deffcbd49bc6fc5c/docs/images/contribution-graph-share.png) |
+
 ## Highlights
 
 - View the entire graph or only blocks created by the current Roam user.
