@@ -16,6 +16,8 @@ const SHARE_PANEL_HEIGHT = 116;
 const SHARE_PANEL_GAP = 4;
 const SHARE_HEADER_HEIGHT = 132;
 const SHARE_FOOTER_HEIGHT = 36;
+const ROAM_UI_FONT_FAMILY =
+  "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif";
 
 export const ALL_BLOCKS_QUERY = `[:find ?entity ?time
   :timeout 60000
@@ -260,9 +262,7 @@ export const createShareScreenshot = async ({
   if (!context) throw new Error("Canvas rendering is unavailable");
   context.imageSmoothingEnabled = false;
   context.scale(SHARE_SCALE, SHARE_SCALE);
-  const fontFamily =
-    documentRef.defaultView?.getComputedStyle?.(documentRef.body)?.fontFamily ||
-    "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
+  const fontFamily = ROAM_UI_FONT_FAMILY;
   context.fillStyle = "#f5f8fa";
   context.fillRect(0, 0, layout.width, layout.height);
 
@@ -280,7 +280,7 @@ export const createShareScreenshot = async ({
   context.fillStyle = "#394b59";
   context.font = `600 12px ${fontFamily}`;
   context.fillText(
-    `${scopeLabel} · Complete Roam block history · ${range}`,
+    `${scopeLabel} · Complete Roam block history · ${range} · @RoamResearch`,
     SHARE_PADDING,
     61
   );

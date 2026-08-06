@@ -100,6 +100,7 @@ test("share image layout includes every history year in a compact grid", () => {
 test("share screenshot renderer draws the complete history to a PNG", async () => {
   let fillRects = 0;
   const drawnText = [];
+  const drawnFonts = [];
   const context = {
     beginPath() {},
     roundRect() {},
@@ -111,6 +112,7 @@ test("share screenshot renderer draws the complete history to a PNG", async () =
     },
     fillText(value) {
       drawnText.push(value);
+      drawnFonts.push(this.font);
     },
     moveTo() {},
     lineTo() {},
@@ -133,7 +135,11 @@ test("share screenshot renderer draws the complete history to a PNG", async () =
   assert.ok(fillRects > 1_000, "all three calendar years should be drawn");
   assert.ok(drawnText.includes("DAYS IN ROAM"));
   assert.ok(!drawnText.includes("ACTIVE DAYS"));
+  assert.ok(
+    drawnText.includes("Entire graph · Complete Roam block history · 2024–2026 · @RoamResearch")
+  );
   assert.ok(drawnText.includes("@RoamResearch · Contribution Graph"));
+  assert.ok(drawnFonts.every((font) => font.includes("-apple-system")));
 });
 
 test("share screenshot falls back to a local PNG download", async () => {

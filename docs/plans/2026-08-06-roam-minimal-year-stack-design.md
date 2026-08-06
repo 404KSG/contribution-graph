@@ -26,7 +26,7 @@ Screenshot progress is communicated in the initiating button: Preparing, Shared,
 
 Annual SVGs display at their native dimensions instead of being fractionally scaled to container width. Labels inherit Roam's font, use normal weight and quieter color, and cells use crisp-edge rendering. PNG export increases to 3× resolution and disables image smoothing.
 
-The final type hierarchy uses Roam's inherited font with high-contrast Blueprint dark gray: year labels are bold, calendar labels semibold, and secondary UI text semibold. `@RoamResearch` follows the subtitle as plain text without badge chrome or shadow, and the same attribution appears in screenshot output. The decorative dialog icon is removed so the title aligns directly with the content rail.
+The final type hierarchy uses Roam and Blueprint's macOS-first UI sans-serif stack with high-contrast Blueprint dark gray: year labels are bold, calendar labels semibold, and secondary UI text semibold. Screenshot rendering uses that same fixed UI stack instead of reading Roam's page-body font, because graph themes may assign a serif face to body content. `@RoamResearch` follows the subtitle as plain text without badge chrome or shadow, appears at the end of the screenshot subtitle, and remains in the screenshot footer. The decorative dialog icon is removed so the title aligns directly with the content rail.
 
 Add `Days in Roam` as elapsed calendar days from the first dated block through today, inclusive. Keep active-day calculation internally for annual tooltips and streak logic, but remove it from the summary rail and shared image to reduce competing metrics. Expose the first block date as the metric tooltip and include the elapsed duration in shared images.
 
