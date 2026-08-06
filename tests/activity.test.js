@@ -6,8 +6,11 @@ import {
   OWN_BLOCKS_QUERY,
   aggregateTimestamps,
   aggregateTimestampsInBatches,
+  buildShareImageLayout,
   buildYearCalendar,
   calculateStats,
+  createShareScreenshot,
+  deliverShareScreenshot,
   formatDateKey,
   getContributionLevel,
   getHistoryYears,
@@ -68,6 +71,81 @@ test("year calendar covers every day including leap day", () => {
 
 test("history years include gaps through the current year", () => {
   assert.deepEqual(getHistoryYears({ "2023-04-01": 1 }, 2026), [2026, 2025, 2024, 2023]);
+});
+
+test("share image layout includes every history year in a compact grid", () => {
+  const shortHistory = buildShareImageLayout({ "2026-01-01": 1 }, 2026);
+  const longHistory = buildShareImageLayout(
+    { "2019-04-01": 1, "2026-08-06": 1 },
+    2026
+  );
+  assert.deepEqual(longHistory.years, [2026, 2025, 2024, 2023, 2022, 2021, 2020, 2019]);
+  assert.equal(longHistory.columns, 2);
+  assert.equal(longHistory.rows, 4);
+  assert.ok(longHistory.height > shortHistory.height);
+});
+
+test("share screenshot renderer draws the complete history to a PNG", async () => {
+  let fillRects = 0;
+  const context = {
+    beginPath() {},
+    roundRect() {},
+    fill() {},
+    stroke() {},
+    scale() {},
+    fillRect() {
+      fillRects += 1;
+    },
+    fillText() {},
+    moveTo() {},
+    lineTo() {},
+  };
+  const canvas = {
+    getContext: () => context,
+    toBlob: (callback) => callback(new Blob(["png"], { type: "image/png" })),
+  };
+  const result = await createShareScreenshot({
+    counts: { "2024-02-29": 2, "2026-08-06": 1 },
+    scope: "all",
+    now: new Date("2026-08-06T12:00:00Z"),
+    documentRef: { createElement: () => canvas },
+  });
+  assert.equal(result.blob.type, "image/png");
+  assert.equal(result.filename, "roam-contribution-graph-2026-08-06.png");
+  assert.ok(result.width > 1000);
+  assert.ok(fillRects > 1_000, "all three calendar years should be drawn");
+});
+
+test("share screenshot falls back to a local PNG download", async () => {
+  let clicked = false;
+  let appended = false;
+  let revoked = false;
+  const link = {
+    style: {},
+    click: () => {
+      clicked = true;
+    },
+    remove() {},
+  };
+  const result = await deliverShareScreenshot({
+    blob: new Blob(["png"], { type: "image/png" }),
+    filename: "history.png",
+    navigatorRef: {},
+    documentRef: {
+      createElement: () => link,
+      body: { appendChild: () => (appended = true) },
+    },
+    urlRef: {
+      createObjectURL: () => "blob:test",
+      revokeObjectURL: () => (revoked = true),
+    },
+  });
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  assert.equal(result, "downloaded");
+  assert.equal(link.download, "history.png");
+  assert.equal(appended, true);
+  assert.equal(clicked, true);
+  assert.equal(revoked, true);
 });
 
 test("stats calculate totals and streaks", () => {

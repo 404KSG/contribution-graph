@@ -9,6 +9,13 @@ const CELL_GAP = 2;
 const CELL_STEP = CELL_SIZE + CELL_GAP;
 const GRAPH_TOP = 17;
 const GRAPH_LEFT = 24;
+const SHARE_SCALE = 2;
+const SHARE_PADDING = 32;
+const SHARE_PANEL_WIDTH = 552;
+const SHARE_PANEL_HEIGHT = 122;
+const SHARE_PANEL_GAP = 12;
+const SHARE_HEADER_HEIGHT = 146;
+const SHARE_FOOTER_HEIGHT = 44;
 
 export const ALL_BLOCKS_QUERY = `[:find ?entity ?time
   :timeout 60000
@@ -159,6 +166,257 @@ export const calculateStats = (counts, today = new Date()) => {
     currentStreak,
     longestStreak,
   };
+};
+
+export const buildShareImageLayout = (
+  counts,
+  currentYear = new Date().getFullYear()
+) => {
+  const years = getHistoryYears(counts, currentYear);
+  const columns = Math.min(2, years.length);
+  const rows = Math.ceil(years.length / columns);
+  return {
+    years,
+    columns,
+    rows,
+    width:
+      SHARE_PADDING * 2 +
+      columns * SHARE_PANEL_WIDTH +
+      (columns - 1) * SHARE_PANEL_GAP,
+    height:
+      SHARE_HEADER_HEIGHT +
+      rows * SHARE_PANEL_HEIGHT +
+      Math.max(0, rows - 1) * SHARE_PANEL_GAP +
+      SHARE_FOOTER_HEIGHT,
+  };
+};
+
+const drawRoundedRect = (context, x, y, width, height, radius, fill, stroke) => {
+  context.beginPath();
+  context.roundRect(x, y, width, height, radius);
+  if (fill) {
+    context.fillStyle = fill;
+    context.fill();
+  }
+  if (stroke) {
+    context.strokeStyle = stroke;
+    context.lineWidth = 1;
+    context.stroke();
+  }
+};
+
+const drawShareYear = (context, { year, counts, x, y }) => {
+  const calendar = buildYearCalendar(year, counts);
+  const yearCells = calendar.cells.filter((cell) => cell.inYear);
+  const yearTotal = yearCells.reduce((total, cell) => total + cell.count, 0);
+  const activeDays = yearCells.filter((cell) => cell.count > 0).length;
+  const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  const levelColors = ["#ebf1f5", "#c6e6f4", "#79c0e8", "#2b95d6", "#106ba3"];
+  const gridLeft = x + 29;
+  const gridTop = y + 48;
+
+  drawRoundedRect(
+    context,
+    x,
+    y,
+    SHARE_PANEL_WIDTH,
+    SHARE_PANEL_HEIGHT,
+    6,
+    "#f5f8fa",
+    "#d8e1e8"
+  );
+
+  context.fillStyle = "#182026";
+  context.font = "600 15px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
+  context.textAlign = "left";
+  context.fillText(String(year), x + 11, y + 21);
+  context.fillStyle = "#738694";
+  context.font = "10px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
+  context.textAlign = "right";
+  context.fillText(
+    `${yearTotal.toLocaleString()} blocks · ${activeDays.toLocaleString()} active days`,
+    x + SHARE_PANEL_WIDTH - 11,
+    y + 20
+  );
+
+  context.fillStyle = "#738694";
+  context.font = "8px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
+  context.textAlign = "left";
+  for (const { month, week } of calendar.monthColumns) {
+    context.fillText(monthNames[month], gridLeft + week * CELL_STEP, y + 38);
+  }
+  for (const [weekday, label] of [[1, "Mon"], [3, "Wed"], [5, "Fri"]]) {
+    context.fillText(label, x + 7, gridTop + weekday * CELL_STEP + 6);
+  }
+
+  for (const cell of calendar.cells) {
+    if (!cell.inYear) continue;
+    context.fillStyle = levelColors[getContributionLevel(cell.count)];
+    context.fillRect(
+      gridLeft + cell.week * CELL_STEP,
+      gridTop + cell.weekday * CELL_STEP,
+      CELL_SIZE,
+      CELL_SIZE
+    );
+  }
+};
+
+export const createShareScreenshot = async ({
+  counts,
+  scope = "all",
+  now = new Date(),
+  documentRef = document,
+}) => {
+  const layout = buildShareImageLayout(counts, now.getFullYear());
+  const canvas = documentRef.createElement("canvas");
+  canvas.width = layout.width * SHARE_SCALE;
+  canvas.height = layout.height * SHARE_SCALE;
+  const context = canvas.getContext("2d");
+  if (!context) throw new Error("Canvas rendering is unavailable");
+  context.scale(SHARE_SCALE, SHARE_SCALE);
+  context.fillStyle = "#ffffff";
+  context.fillRect(0, 0, layout.width, layout.height);
+
+  const stats = calculateStats(counts, now);
+  const range =
+    layout.years[0] === layout.years.at(-1)
+      ? String(layout.years[0])
+      : `${layout.years.at(-1)}–${layout.years[0]}`;
+  const scopeLabel = scope === "all" ? "Entire graph" : "Current Roam user";
+
+  context.fillStyle = "#182026";
+  context.font = "600 25px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
+  context.textAlign = "left";
+  context.fillText("Contribution Graph", SHARE_PADDING, 38);
+  context.fillStyle = "#5c7080";
+  context.font = "12px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
+  context.fillText(
+    `${scopeLabel} · Complete Roam block history · ${range}`,
+    SHARE_PADDING,
+    61
+  );
+  context.textAlign = "right";
+  context.fillText(
+    now.toLocaleString(),
+    layout.width - SHARE_PADDING,
+    38
+  );
+
+  const statItems = [
+    ["BLOCKS", stats.totalBlocks.toLocaleString()],
+    ["ACTIVE DAYS", stats.activeDays.toLocaleString()],
+    ["CURRENT STREAK", `${stats.currentStreak}d`],
+    ["LONGEST STREAK", `${stats.longestStreak}d`],
+  ];
+  const statsY = 78;
+  const statsWidth = layout.width - SHARE_PADDING * 2;
+  const statWidth = statsWidth / statItems.length;
+  drawRoundedRect(context, SHARE_PADDING, statsY, statsWidth, 50, 6, "#f5f8fa", "#d8e1e8");
+  for (const [index, [label, value]] of statItems.entries()) {
+    const statX = SHARE_PADDING + index * statWidth;
+    if (index > 0) {
+      context.strokeStyle = "#d8e1e8";
+      context.beginPath();
+      context.moveTo(statX, statsY);
+      context.lineTo(statX, statsY + 50);
+      context.stroke();
+    }
+    context.fillStyle = "#182026";
+    context.font = "600 17px ui-monospace, SFMono-Regular, Menlo, monospace";
+    context.textAlign = "left";
+    context.fillText(value, statX + 12, statsY + 22);
+    context.fillStyle = "#738694";
+    context.font = "700 8px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
+    context.fillText(label, statX + 12, statsY + 39);
+  }
+
+  for (const [index, year] of layout.years.entries()) {
+    const column = index % layout.columns;
+    const row = Math.floor(index / layout.columns);
+    drawShareYear(context, {
+      year,
+      counts,
+      x: SHARE_PADDING + column * (SHARE_PANEL_WIDTH + SHARE_PANEL_GAP),
+      y: SHARE_HEADER_HEIGHT + row * (SHARE_PANEL_HEIGHT + SHARE_PANEL_GAP),
+    });
+  }
+
+  const footerY = layout.height - 21;
+  context.fillStyle = "#738694";
+  context.font = "9px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
+  context.textAlign = "left";
+  context.fillText("Generated from Roam Research · Contribution Graph", SHARE_PADDING, footerY);
+  context.textAlign = "right";
+  context.fillText("Less", layout.width - SHARE_PADDING - 86, footerY);
+  for (let level = 0; level <= 4; level += 1) {
+    context.fillStyle = ["#ebf1f5", "#c6e6f4", "#79c0e8", "#2b95d6", "#106ba3"][level];
+    context.fillRect(layout.width - SHARE_PADDING - 61 + level * 10, footerY - 8, 7, 7);
+  }
+  context.fillStyle = "#738694";
+  context.fillText("More", layout.width - SHARE_PADDING, footerY);
+
+  const blob = await new Promise((resolve, reject) => {
+    canvas.toBlob(
+      (result) => (result ? resolve(result) : reject(new Error("Could not create screenshot"))),
+      "image/png"
+    );
+  });
+  return {
+    blob,
+    filename: `roam-contribution-graph-${formatDateKey(now)}.png`,
+    width: layout.width,
+    height: layout.height,
+  };
+};
+
+export const deliverShareScreenshot = async ({
+  blob,
+  filename,
+  navigatorRef = navigator,
+  documentRef = document,
+  urlRef = URL,
+}) => {
+  const FileType = globalThis.File;
+  const file = FileType ? new FileType([blob], filename, { type: "image/png" }) : null;
+  let canShareFiles = false;
+  try {
+    canShareFiles = Boolean(file && navigatorRef?.share && navigatorRef.canShare?.({ files: [file] }));
+  } catch {
+    canShareFiles = false;
+  }
+  if (canShareFiles) {
+    try {
+      await navigatorRef.share({
+        title: "Roam Contribution Graph",
+        text: "Complete Roam block contribution history",
+        files: [file],
+      });
+      return "shared";
+    } catch (error) {
+      if (error?.name === "AbortError") throw error;
+    }
+  }
+
+  const ClipboardItemType = globalThis.ClipboardItem;
+  if (ClipboardItemType && navigatorRef?.clipboard?.write) {
+    try {
+      await navigatorRef.clipboard.write([new ClipboardItemType({ "image/png": blob })]);
+      return "copied";
+    } catch {
+      // Clipboard image writes are not available in every Roam host; download below.
+    }
+  }
+
+  const objectUrl = urlRef.createObjectURL(blob);
+  const link = documentRef.createElement("a");
+  link.href = objectUrl;
+  link.download = filename;
+  link.style.display = "none";
+  documentRef.body.appendChild(link);
+  link.click();
+  link.remove();
+  setTimeout(() => urlRef.revokeObjectURL(objectUrl), 0);
+  return "downloaded";
 };
 
 const resolveQuery = (api) => {
@@ -369,7 +627,10 @@ export const createExtensionController = ({ extensionAPI, api = window.roamAlpha
     if (document.getElementById(TOPBAR_BUTTON_ID)) return;
     const topbar = document.querySelector(".rm-topbar");
     if (!topbar) return;
-    const button = createElement("button", "bp3-button bp3-minimal rcg-topbar-button", "▦");
+    const button = createElement(
+      "button",
+      "bp3-button bp3-minimal bp3-icon-heat-grid rcg-topbar-button"
+    );
     button.id = TOPBAR_BUTTON_ID;
     button.type = "button";
     button.title = "Open complete Roam contribution history";
@@ -384,21 +645,55 @@ export const createExtensionController = ({ extensionAPI, api = window.roamAlpha
     else removeTopbarButton();
   };
 
+  const shareCurrentHistory = async () => {
+    if (!root || destroyed) return;
+    const scope = root.querySelector("select[name='scope']")?.value || "all";
+    const cached = cache.get(scope);
+    const status = root.querySelector(".rcg-status");
+    const shareButton = root.querySelector(".rcg-share");
+    if (!cached || !status || !shareButton) return;
+
+    shareButton.disabled = true;
+    shareButton.setAttribute("aria-busy", "true");
+    status.textContent = "Preparing complete-history screenshot…";
+    status.classList.remove("rcg-status--error");
+    try {
+      const screenshot = await createShareScreenshot({ counts: cached.counts, scope });
+      const delivery = await deliverShareScreenshot(screenshot);
+      const deliveryLabel = {
+        shared: "shared",
+        copied: "copied to clipboard",
+        downloaded: "downloaded",
+      }[delivery];
+      status.textContent = `${formatLoadedStatus({ scope, counts: cached.counts, cached: true })} · Screenshot ${deliveryLabel}`;
+    } catch (error) {
+      if (error?.name === "AbortError") {
+        status.textContent = `${formatLoadedStatus({ scope, counts: cached.counts, cached: true })} · Sharing canceled`;
+      } else {
+        status.textContent = `Could not share screenshot: ${error?.message || error}`;
+        status.classList.add("rcg-status--error");
+      }
+    } finally {
+      shareButton.disabled = false;
+      shareButton.removeAttribute("aria-busy");
+    }
+  };
+
   const createDialog = () => {
     const overlay = createElement("div", "rcg-root");
     overlay.id = ROOT_ID;
     overlay.setAttribute("aria-hidden", "true");
-    const dialog = createElement("div", "rcg-dialog");
+    const dialog = createElement("div", "bp3-dialog rcg-dialog");
     dialog.tabIndex = -1;
     dialog.setAttribute("role", "dialog");
     dialog.setAttribute("aria-modal", "true");
     dialog.setAttribute("aria-labelledby", "rcg-title");
 
-    const header = createElement("header", "rcg-header");
-    const mark = createElement("span", "rcg-mark", "▦");
+    const header = createElement("header", "bp3-dialog-header rcg-header");
+    const mark = createElement("span", "bp3-icon bp3-icon-heat-grid rcg-mark");
     mark.setAttribute("aria-hidden", "true");
     const titleGroup = createElement("div", "rcg-heading");
-    const title = createElement("h2", "rcg-title", "Contribution Graph");
+    const title = createElement("h2", "bp3-heading rcg-title", "Contribution Graph");
     title.id = "rcg-title";
     titleGroup.append(
       title,
@@ -407,7 +702,8 @@ export const createExtensionController = ({ extensionAPI, api = window.roamAlpha
     const actions = createElement("div", "rcg-actions");
     const scopeLabel = createElement("label", "rcg-scope");
     scopeLabel.appendChild(createElement("span", "rcg-visually-hidden", "History scope"));
-    const scope = createElement("select", "bp3-input rcg-scope__select");
+    const scopeWrapper = createElement("div", "bp3-select bp3-small rcg-scope__wrapper");
+    const scope = createElement("select", "rcg-scope__select");
     scope.name = "scope";
     const allOption = createElement("option", "", "Entire graph");
     allOption.value = "all";
@@ -419,15 +715,31 @@ export const createExtensionController = ({ extensionAPI, api = window.roamAlpha
     }
     scope.value = "all";
     scope.addEventListener("change", () => void load(true));
-    scopeLabel.appendChild(scope);
-    const refresh = createElement("button", "bp3-button rcg-refresh", "↻ Refresh");
+    scopeWrapper.appendChild(scope);
+    scopeLabel.appendChild(scopeWrapper);
+    const shareButton = createElement(
+      "button",
+      "bp3-button bp3-intent-primary bp3-icon-camera rcg-share",
+      "Share Screenshot"
+    );
+    shareButton.type = "button";
+    shareButton.disabled = true;
+    shareButton.addEventListener("click", () => void shareCurrentHistory());
+    const refresh = createElement(
+      "button",
+      "bp3-button bp3-minimal bp3-icon-refresh rcg-refresh",
+      "Refresh"
+    );
     refresh.type = "button";
     refresh.addEventListener("click", () => void load(true));
-    const closeButton = createElement("button", "bp3-button bp3-minimal rcg-close", "×");
+    const closeButton = createElement(
+      "button",
+      "bp3-dialog-close-button bp3-button bp3-minimal bp3-icon-cross rcg-close"
+    );
     closeButton.type = "button";
     closeButton.setAttribute("aria-label", "Close contribution graph");
     closeButton.addEventListener("click", close);
-    actions.append(scopeLabel, refresh, closeButton);
+    actions.append(scopeLabel, shareButton, refresh, closeButton);
     header.append(mark, titleGroup, actions);
 
     const note = createElement(
@@ -459,11 +771,13 @@ export const createExtensionController = ({ extensionAPI, api = window.roamAlpha
     const stats = root.querySelector(".rcg-stats");
     const content = root.querySelector(".rcg-content");
     const refresh = root.querySelector(".rcg-refresh");
+    const shareButton = root.querySelector(".rcg-share");
     const cached = cache.get(scope);
     if (!force && cached && Date.now() - cached.loadedAt < CACHE_TTL_MS) {
       renderStats(stats, cached.counts);
       renderHistory(content, cached.counts);
       status.textContent = formatLoadedStatus({ scope, counts: cached.counts, cached: true });
+      shareButton.disabled = false;
       return;
     }
 
@@ -471,6 +785,7 @@ export const createExtensionController = ({ extensionAPI, api = window.roamAlpha
     status.textContent = "Reading complete Roam history…";
     status.classList.remove("rcg-status--error");
     refresh.disabled = true;
+    shareButton.disabled = true;
     stats.replaceChildren();
     content.replaceChildren(createElement("div", "rcg-loading", "Loading…"));
     await nextFrame();
@@ -486,6 +801,7 @@ export const createExtensionController = ({ extensionAPI, api = window.roamAlpha
       renderStats(stats, counts);
       renderHistory(content, counts);
       status.textContent = formatLoadedStatus({ scope, counts });
+      shareButton.disabled = false;
     } catch (error) {
       if (destroyed || version !== loadVersion) return;
       content.replaceChildren();
@@ -493,6 +809,7 @@ export const createExtensionController = ({ extensionAPI, api = window.roamAlpha
       status.classList.add("rcg-status--error");
     } finally {
       if (!destroyed && version === loadVersion) refresh.disabled = false;
+      if (!destroyed && version === loadVersion && cache.has(scope)) shareButton.disabled = false;
     }
   };
 
