@@ -25,3 +25,7 @@ Scope and Share Screenshot use an identical 32-pixel Blueprint control height. R
 Screenshot progress is communicated in the initiating button: Preparing, Shared, Copied, Downloaded, Canceled, or Try again. Feedback clears after a short delay and timers are disposed on extension unload.
 
 Annual SVGs display at their native dimensions instead of being fractionally scaled to container width. Labels inherit Roam's font, use normal weight and quieter color, and cells use crisp-edge rendering. PNG export increases to 3× resolution and disables image smoothing.
+
+The final type hierarchy uses Roam's inherited font with Blueprint dark gray rather than low-contrast gray: year labels are semibold, calendar labels medium, and secondary UI text regular. A minimal `@RoamResearch` Blueprint tag occupies the intentional header gap and the same attribution appears in screenshot output.
+
+Add `Days in Roam` as elapsed calendar days from the first dated block through today, inclusive. Keep `Active days` because it answers a different question: how many of those elapsed days contain activity. Expose the first block date as the metric tooltip and include the elapsed duration in shared images.
