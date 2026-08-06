@@ -22,7 +22,7 @@ The metric counts entities with both `:block/string` and `:create/time`, so page
 ## Performance And Privacy
 
 - No query runs during normal Roam startup.
-- The complete-history query runs only when you open the graph, when the one-minute in-memory cache expires, or when you press **Refresh**.
+- The complete-history query runs only when you open an uncached or expired scope, or when you press **Refresh**. Returning to a recently loaded scope reuses its one-minute in-memory cache.
 - Timestamp aggregation yields between large batches so rendering many years remains responsive after Roam returns the query result.
 - There are no runtime dependencies, servers, analytics, tokens, or extension-initiated network requests.
 - Block text is not read. Daily counts are not written to the console or sent anywhere.
@@ -45,6 +45,8 @@ Inside the dialog:
 - press the Blueprint **refresh icon** to bypass the short memory cache;
 - hover a cell to see its exact date and block count;
 - press `Escape`, the close button, or the backdrop to close.
+
+The dialog keeps Scope, Share Screenshot, Refresh, and Close available on narrow screens. Keyboard focus stays inside the open modal and returns to the control that opened it when the modal closes.
 
 ## Developer Installation
 

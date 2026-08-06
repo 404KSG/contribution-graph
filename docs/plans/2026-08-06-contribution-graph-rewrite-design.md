@@ -22,6 +22,8 @@ Each year is rendered as its own accessible SVG. The calendar begins on the Sund
 
 Missing Roam APIs, unavailable current-user identity, empty graphs, and query failures produce visible states instead of uncaught exceptions. A generation token prevents stale async aggregation from updating a closed or refreshed dialog. Unload removes the modal, topbar button, observers, document listeners, and command registration. No block text, timestamps, or counts leave the browser, and daily counts are not logged to the console.
 
+A failed forced refresh invalidates that scope's previous cache and keeps screenshot sharing disabled, so an error state can never silently export stale data. Returning to a successfully loaded scope within the TTL reuses its cache. The modal traps Tab navigation while open and restores focus to its invoking control when closed.
+
 ## Verification
 
 Node's built-in test runner covers timestamp normalization, complete-year calendar boundaries, fixed color levels, author-scoped query selection, totals, and streak calculations. The build is a deterministic copy of the reviewed source plus CSS and uses only Node standard-library code. Verification includes `npm test`, syntax checks, build repeatability, Depot artifact checks, lifecycle smoke tests with a mocked DOM, and a real Roam developer-extension reload when the local runtime permits it.

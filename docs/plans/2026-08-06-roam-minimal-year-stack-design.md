@@ -22,6 +22,8 @@ Update layout tests to require one column for both short and long histories and 
 
 Scope and Share Screenshot use an identical 32-pixel Blueprint control height. Refresh is an icon-only Blueprint button with accessible label and tooltip. The metadata row contains only scope and year coverage; explanatory prose and cache/block details are removed.
 
+Scope, Share Screenshot, Refresh, and Close remain available at every supported viewport width. On phone-width layouts the action rail becomes a four-column compact grid rather than hiding controls.
+
 Screenshot progress is communicated in the initiating button: Preparing, Shared, Copied, Downloaded, Canceled, or Try again. Feedback clears after a short delay and timers are disposed on extension unload.
 
 Annual SVGs display at their native dimensions instead of being fractionally scaled to container width. Labels inherit Roam's font, use normal weight and quieter color, and cells use crisp-edge rendering. PNG export increases to 3× resolution and disables image smoothing.

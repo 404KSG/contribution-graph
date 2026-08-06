@@ -592,6 +592,7 @@ export const createExtensionController = ({ extensionAPI, api = window.roamAlpha
   let topbarObserver = null;
   let loadVersion = 0;
   let shareFeedbackTimer = null;
+  let returnFocusTarget = null;
   const cache = new Map();
   const cleanup = [];
   const userUid = getCurrentUserUid(api);
@@ -600,6 +601,11 @@ export const createExtensionController = ({ extensionAPI, api = window.roamAlpha
 
   const open = () => {
     if (destroyed) return;
+    const wasOpen = root?.classList.contains("rcg-root--open");
+    if (!wasOpen) {
+      const activeElement = document.activeElement;
+      returnFocusTarget = activeElement && activeElement !== document.body ? activeElement : null;
+    }
     if (!root) root = createDialog();
     root.classList.add("rcg-root--open");
     root.setAttribute("aria-hidden", "false");
@@ -608,10 +614,19 @@ export const createExtensionController = ({ extensionAPI, api = window.roamAlpha
   };
 
   const close = () => {
-    if (!root) return;
+    if (!root || !root.classList.contains("rcg-root--open")) return;
     loadVersion += 1;
     root.classList.remove("rcg-root--open");
     root.setAttribute("aria-hidden", "true");
+    const focusTarget = returnFocusTarget;
+    returnFocusTarget = null;
+    if (
+      focusTarget &&
+      focusTarget.isConnected !== false &&
+      typeof focusTarget.focus === "function"
+    ) {
+      focusTarget.focus();
+    }
   };
 
   const ensureTopbarButton = () => {
@@ -741,7 +756,7 @@ export const createExtensionController = ({ extensionAPI, api = window.roamAlpha
       scope.appendChild(ownOption);
     }
     scope.value = "all";
-    scope.addEventListener("change", () => void load(true));
+    scope.addEventListener("change", () => void load(false));
     scopeWrapper.appendChild(scope);
     scopeLabel.appendChild(scopeWrapper);
     const shareButton = createElement(
@@ -802,6 +817,7 @@ export const createExtensionController = ({ extensionAPI, api = window.roamAlpha
       renderStats(stats, cached.counts);
       renderHistory(content, cached.counts);
       status.textContent = formatLoadedStatus({ scope, counts: cached.counts });
+      status.classList.remove("rcg-status--error");
       shareButton.disabled = false;
       return;
     }
@@ -830,17 +846,45 @@ export const createExtensionController = ({ extensionAPI, api = window.roamAlpha
       shareButton.disabled = false;
     } catch (error) {
       if (destroyed || version !== loadVersion) return;
+      if (force) cache.delete(scope);
       content.replaceChildren();
       status.textContent = `Could not load contribution history: ${error?.message || error}`;
       status.classList.add("rcg-status--error");
     } finally {
       if (!destroyed && version === loadVersion) refresh.disabled = false;
-      if (!destroyed && version === loadVersion && cache.has(scope)) shareButton.disabled = false;
     }
   };
 
   const onKeyDown = (event) => {
-    if (event.key === "Escape" && root?.classList.contains("rcg-root--open")) close();
+    if (!root?.classList.contains("rcg-root--open")) return;
+    if (event.key === "Escape") {
+      close();
+      return;
+    }
+    if (event.key !== "Tab") return;
+    const dialog = root.querySelector(".rcg-dialog");
+    const focusable = Array.from(
+      dialog?.querySelectorAll("button:not([disabled]), select:not([disabled])") || []
+    );
+    if (focusable.length === 0) {
+      event.preventDefault();
+      dialog?.focus();
+      return;
+    }
+    const first = focusable[0];
+    const last = focusable.at(-1);
+    const activeElement = document.activeElement;
+    const outsideDialog = !dialog?.contains(activeElement);
+    if (event.shiftKey && (activeElement === first || activeElement === dialog || outsideDialog)) {
+      event.preventDefault();
+      last.focus();
+    } else if (
+      !event.shiftKey &&
+      (activeElement === last || activeElement === dialog || outsideDialog)
+    ) {
+      event.preventDefault();
+      first.focus();
+    }
   };
 
   const init = () => {
@@ -880,6 +924,7 @@ export const createExtensionController = ({ extensionAPI, api = window.roamAlpha
     removeTopbarButton();
     root?.remove();
     root = null;
+    returnFocusTarget = null;
     if (shareFeedbackTimer) clearTimeout(shareFeedbackTimer);
     shareFeedbackTimer = null;
     for (const dispose of cleanup.splice(0)) dispose();
