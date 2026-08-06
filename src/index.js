@@ -4,18 +4,18 @@ const COMMAND_LABEL = "Contribution Graph: Open complete history";
 const SHOW_BUTTON_SETTING = "showTopbarButton";
 const CACHE_TTL_MS = 60_000;
 const SVG_NS = "http://www.w3.org/2000/svg";
-const CELL_SIZE = 7;
-const CELL_GAP = 2;
+const CELL_SIZE = 10;
+const CELL_GAP = 3;
 const CELL_STEP = CELL_SIZE + CELL_GAP;
-const GRAPH_TOP = 17;
-const GRAPH_LEFT = 24;
+const GRAPH_TOP = 18;
+const GRAPH_LEFT = 38;
 const SHARE_SCALE = 2;
 const SHARE_PADDING = 32;
-const SHARE_PANEL_WIDTH = 552;
-const SHARE_PANEL_HEIGHT = 122;
-const SHARE_PANEL_GAP = 12;
-const SHARE_HEADER_HEIGHT = 146;
-const SHARE_FOOTER_HEIGHT = 44;
+const SHARE_PANEL_WIDTH = 836;
+const SHARE_PANEL_HEIGHT = 116;
+const SHARE_PANEL_GAP = 4;
+const SHARE_HEADER_HEIGHT = 132;
+const SHARE_FOOTER_HEIGHT = 36;
 
 export const ALL_BLOCKS_QUERY = `[:find ?entity ?time
   :timeout 60000
@@ -173,8 +173,8 @@ export const buildShareImageLayout = (
   currentYear = new Date().getFullYear()
 ) => {
   const years = getHistoryYears(counts, currentYear);
-  const columns = Math.min(2, years.length);
-  const rows = Math.ceil(years.length / columns);
+  const columns = 1;
+  const rows = years.length;
   return {
     years,
     columns,
@@ -205,48 +205,26 @@ const drawRoundedRect = (context, x, y, width, height, radius, fill, stroke) => 
   }
 };
 
-const drawShareYear = (context, { year, counts, x, y }) => {
+const drawShareYear = (context, { year, counts, x, y, fontFamily }) => {
   const calendar = buildYearCalendar(year, counts);
-  const yearCells = calendar.cells.filter((cell) => cell.inYear);
-  const yearTotal = yearCells.reduce((total, cell) => total + cell.count, 0);
-  const activeDays = yearCells.filter((cell) => cell.count > 0).length;
   const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
   const levelColors = ["#ebf1f5", "#c6e6f4", "#79c0e8", "#2b95d6", "#106ba3"];
-  const gridLeft = x + 29;
-  const gridTop = y + 48;
-
-  drawRoundedRect(
-    context,
-    x,
-    y,
-    SHARE_PANEL_WIDTH,
-    SHARE_PANEL_HEIGHT,
-    6,
-    "#f5f8fa",
-    "#d8e1e8"
-  );
+  const gridLeft = x + GRAPH_LEFT;
+  const gridTop = y + GRAPH_TOP;
 
   context.fillStyle = "#182026";
-  context.font = "600 15px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
+  context.font = `600 10px ${fontFamily}`;
   context.textAlign = "left";
-  context.fillText(String(year), x + 11, y + 21);
-  context.fillStyle = "#738694";
-  context.font = "10px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
-  context.textAlign = "right";
-  context.fillText(
-    `${yearTotal.toLocaleString()} blocks · ${activeDays.toLocaleString()} active days`,
-    x + SHARE_PANEL_WIDTH - 11,
-    y + 20
-  );
+  context.fillText(String(year), x, y + 9);
 
   context.fillStyle = "#738694";
-  context.font = "8px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
+  context.font = `600 9px ${fontFamily}`;
   context.textAlign = "left";
   for (const { month, week } of calendar.monthColumns) {
-    context.fillText(monthNames[month], gridLeft + week * CELL_STEP, y + 38);
+    context.fillText(monthNames[month], gridLeft + week * CELL_STEP, y + 9);
   }
   for (const [weekday, label] of [[1, "Mon"], [3, "Wed"], [5, "Fri"]]) {
-    context.fillText(label, x + 7, gridTop + weekday * CELL_STEP + 6);
+    context.fillText(label, x, gridTop + weekday * CELL_STEP + 8);
   }
 
   for (const cell of calendar.cells) {
@@ -274,7 +252,10 @@ export const createShareScreenshot = async ({
   const context = canvas.getContext("2d");
   if (!context) throw new Error("Canvas rendering is unavailable");
   context.scale(SHARE_SCALE, SHARE_SCALE);
-  context.fillStyle = "#ffffff";
+  const fontFamily =
+    documentRef.defaultView?.getComputedStyle?.(documentRef.body)?.fontFamily ||
+    "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
+  context.fillStyle = "#f5f8fa";
   context.fillRect(0, 0, layout.width, layout.height);
 
   const stats = calculateStats(counts, now);
@@ -285,11 +266,11 @@ export const createShareScreenshot = async ({
   const scopeLabel = scope === "all" ? "Entire graph" : "Current Roam user";
 
   context.fillStyle = "#182026";
-  context.font = "600 25px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
+  context.font = `600 23px ${fontFamily}`;
   context.textAlign = "left";
   context.fillText("Contribution Graph", SHARE_PADDING, 38);
   context.fillStyle = "#5c7080";
-  context.font = "12px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
+  context.font = `12px ${fontFamily}`;
   context.fillText(
     `${scopeLabel} · Complete Roam block history · ${range}`,
     SHARE_PADDING,
@@ -308,25 +289,25 @@ export const createShareScreenshot = async ({
     ["CURRENT STREAK", `${stats.currentStreak}d`],
     ["LONGEST STREAK", `${stats.longestStreak}d`],
   ];
-  const statsY = 78;
+  const statsY = 72;
   const statsWidth = layout.width - SHARE_PADDING * 2;
   const statWidth = statsWidth / statItems.length;
-  drawRoundedRect(context, SHARE_PADDING, statsY, statsWidth, 50, 6, "#f5f8fa", "#d8e1e8");
+  drawRoundedRect(context, SHARE_PADDING, statsY, statsWidth, 46, 3, "#ffffff", "#d8e1e8");
   for (const [index, [label, value]] of statItems.entries()) {
     const statX = SHARE_PADDING + index * statWidth;
     if (index > 0) {
       context.strokeStyle = "#d8e1e8";
       context.beginPath();
       context.moveTo(statX, statsY);
-      context.lineTo(statX, statsY + 50);
+      context.lineTo(statX, statsY + 46);
       context.stroke();
     }
     context.fillStyle = "#182026";
-    context.font = "600 17px ui-monospace, SFMono-Regular, Menlo, monospace";
+    context.font = `600 16px ${fontFamily}`;
     context.textAlign = "left";
     context.fillText(value, statX + 12, statsY + 22);
     context.fillStyle = "#738694";
-    context.font = "700 8px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
+    context.font = `9px ${fontFamily}`;
     context.fillText(label, statX + 12, statsY + 39);
   }
 
@@ -338,12 +319,13 @@ export const createShareScreenshot = async ({
       counts,
       x: SHARE_PADDING + column * (SHARE_PANEL_WIDTH + SHARE_PANEL_GAP),
       y: SHARE_HEADER_HEIGHT + row * (SHARE_PANEL_HEIGHT + SHARE_PANEL_GAP),
+      fontFamily,
     });
   }
 
   const footerY = layout.height - 21;
   context.fillStyle = "#738694";
-  context.font = "9px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
+  context.font = `9px ${fontFamily}`;
   context.textAlign = "left";
   context.fillText("Generated from Roam Research · Contribution Graph", SHARE_PADDING, footerY);
   context.textAlign = "right";
@@ -467,14 +449,7 @@ const renderYearGraph = (year, counts) => {
   const yearTotal = yearCells.reduce((total, cell) => total + cell.count, 0);
   const activeDays = yearCells.filter((cell) => cell.count > 0).length;
   const section = createElement("section", "rcg-year");
-  const headingRow = createElement("div", "rcg-year__header");
-  const heading = createElement("h3", "rcg-year__heading", String(year));
-  const summary = createElement(
-    "span",
-    "rcg-year__summary",
-    `${yearTotal.toLocaleString()} blocks · ${activeDays.toLocaleString()} active days`
-  );
-  headingRow.append(heading, summary);
+  section.title = `${year}: ${yearTotal.toLocaleString()} blocks across ${activeDays.toLocaleString()} active days`;
   const scroller = createElement("div", "rcg-year__scroller");
   const svg = createSvgElement("svg", {
     class: "rcg-year__svg",
@@ -485,6 +460,14 @@ const renderYearGraph = (year, counts) => {
     "aria-label": `${year} Roam block contribution graph`,
   });
   const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+  const yearLabel = createSvgElement("text", {
+    x: 0,
+    y: 9,
+    class: "rcg-year__year",
+  });
+  yearLabel.textContent = String(year);
+  svg.appendChild(yearLabel);
 
   for (const { month, week } of calendar.monthColumns) {
     const label = createSvgElement("text", {
@@ -528,7 +511,7 @@ const renderYearGraph = (year, counts) => {
   }
 
   scroller.appendChild(svg);
-  section.append(headingRow, scroller);
+  section.appendChild(scroller);
   return section;
 };
 

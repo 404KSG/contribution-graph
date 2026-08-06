@@ -80,8 +80,9 @@ test("share image layout includes every history year in a compact grid", () => {
     2026
   );
   assert.deepEqual(longHistory.years, [2026, 2025, 2024, 2023, 2022, 2021, 2020, 2019]);
-  assert.equal(longHistory.columns, 2);
-  assert.equal(longHistory.rows, 4);
+  assert.equal(longHistory.columns, 1);
+  assert.equal(longHistory.rows, 8);
+  assert.equal(longHistory.width, shortHistory.width);
   assert.ok(longHistory.height > shortHistory.height);
 });
 
@@ -112,7 +113,7 @@ test("share screenshot renderer draws the complete history to a PNG", async () =
   });
   assert.equal(result.blob.type, "image/png");
   assert.equal(result.filename, "roam-contribution-graph-2026-08-06.png");
-  assert.ok(result.width > 1000);
+  assert.equal(result.width, 900);
   assert.ok(fillRects > 1_000, "all three calendar years should be drawn");
 });
 
