@@ -42,7 +42,7 @@ Inside the dialog:
 
 - switch between **Entire graph** and **Current Roam user** when Roam exposes the current user UID;
 - press **Share Screenshot** to export every rendered year, including years below the visible scroll area;
-- press **Refresh** to bypass the short memory cache;
+- press the Blueprint **refresh icon** to bypass the short memory cache;
 - hover a cell to see its exact date and block count;
 - press `Escape`, the close button, or the backdrop to close.
 

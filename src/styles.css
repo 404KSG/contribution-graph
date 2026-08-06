@@ -4,7 +4,7 @@
   --rcg-surface-hover: #ebf1f5;
   --rcg-border: #d8e1e8;
   --rcg-text: #182026;
-  --rcg-muted: #5c7080;
+  --rcg-muted: #738694;
   --rcg-accent: #106ba3;
   --rcg-level-0: #ebf1f5;
   --rcg-level-1: #c6e6f4;
@@ -108,27 +108,42 @@
 
 .rcg-actions {
   display: flex;
-  align-items: center;
+  align-items: stretch;
   gap: 5px;
 }
 
 .rcg-actions .bp3-button,
 .rcg-scope__wrapper.bp3-select select {
-  min-height: 30px;
+  box-sizing: border-box;
+  height: 32px !important;
+  min-height: 32px;
   font-size: 11px;
 }
 
 .rcg-scope {
   display: block;
+  height: 32px;
+}
+
+.rcg-scope__wrapper.bp3-select {
+  height: 32px;
 }
 
 .rcg-scope__wrapper.bp3-select select {
   min-width: 132px;
   padding-right: 26px;
+  line-height: 30px;
 }
 
 .rcg-share.bp3-button {
+  min-width: 138px;
   white-space: nowrap;
+}
+
+.rcg-icon-button.bp3-button {
+  width: 32px;
+  min-width: 32px;
+  padding: 0;
 }
 
 .rcg-close.bp3-button {
@@ -174,6 +189,7 @@
   color: var(--rcg-text);
   font-family: inherit;
   font-size: 15px;
+  font-weight: 500;
   font-variant-numeric: tabular-nums;
   line-height: 1.15;
   text-overflow: ellipsis;
@@ -187,13 +203,11 @@
 .rcg-overview__meta {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 12px;
+  justify-content: flex-start;
   min-width: 0;
 }
 
-.rcg-status,
-.rcg-note {
+.rcg-status {
   margin: 0;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -201,14 +215,9 @@
 }
 
 .rcg-status {
-  color: var(--rcg-text);
-  font-size: 10px;
-  font-weight: 600;
-}
-
-.rcg-note {
   color: var(--rcg-muted);
-  font-size: 9px;
+  font-size: 10px;
+  font-weight: 400;
 }
 
 .rcg-status--error {
@@ -248,8 +257,9 @@
 
 .rcg-year__svg {
   display: block;
-  width: 100%;
-  min-width: 740px;
+  width: auto;
+  min-width: 0;
+  max-width: none;
   height: auto;
 }
 
@@ -258,21 +268,17 @@
   fill: var(--rcg-muted);
   font-family: inherit;
   font-size: 8px;
-  font-weight: 600;
+  font-weight: 400;
 }
 
 .rcg-year__year {
-  fill: var(--rcg-text);
+  fill: var(--rcg-muted);
+  font-weight: 500;
 }
 
 .rcg-cell {
-  stroke: rgba(16, 22, 26, 0.08);
-  stroke-width: 0.5px;
-}
-
-.rcg-cell:hover {
-  stroke: var(--rcg-text);
-  stroke-width: 1px;
+  stroke: none;
+  shape-rendering: crispEdges;
 }
 
 .rcg-cell--outside {
@@ -414,10 +420,6 @@
 
   .rcg-stat:nth-child(4) {
     border-top: 1px solid var(--rcg-border);
-  }
-
-  .rcg-note {
-    display: none;
   }
 
   .rcg-content {

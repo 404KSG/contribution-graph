@@ -9,7 +9,7 @@ const CELL_GAP = 3;
 const CELL_STEP = CELL_SIZE + CELL_GAP;
 const GRAPH_TOP = 18;
 const GRAPH_LEFT = 38;
-const SHARE_SCALE = 2;
+const SHARE_SCALE = 3;
 const SHARE_PADDING = 32;
 const SHARE_PANEL_WIDTH = 836;
 const SHARE_PANEL_HEIGHT = 116;
@@ -212,13 +212,13 @@ const drawShareYear = (context, { year, counts, x, y, fontFamily }) => {
   const gridLeft = x + GRAPH_LEFT;
   const gridTop = y + GRAPH_TOP;
 
-  context.fillStyle = "#182026";
-  context.font = `600 10px ${fontFamily}`;
+  context.fillStyle = "#5c7080";
+  context.font = `500 10px ${fontFamily}`;
   context.textAlign = "left";
   context.fillText(String(year), x, y + 9);
 
   context.fillStyle = "#738694";
-  context.font = `600 9px ${fontFamily}`;
+  context.font = `400 9px ${fontFamily}`;
   context.textAlign = "left";
   for (const { month, week } of calendar.monthColumns) {
     context.fillText(monthNames[month], gridLeft + week * CELL_STEP, y + 9);
@@ -251,6 +251,7 @@ export const createShareScreenshot = async ({
   canvas.height = layout.height * SHARE_SCALE;
   const context = canvas.getContext("2d");
   if (!context) throw new Error("Canvas rendering is unavailable");
+  context.imageSmoothingEnabled = false;
   context.scale(SHARE_SCALE, SHARE_SCALE);
   const fontFamily =
     documentRef.defaultView?.getComputedStyle?.(documentRef.body)?.fontFamily ||
@@ -303,7 +304,7 @@ export const createShareScreenshot = async ({
       context.stroke();
     }
     context.fillStyle = "#182026";
-    context.font = `600 16px ${fontFamily}`;
+    context.font = `500 16px ${fontFamily}`;
     context.textAlign = "left";
     context.fillText(value, statX + 12, statsY + 22);
     context.fillStyle = "#738694";
@@ -555,13 +556,11 @@ const renderHistory = (container, counts) => {
   container.replaceChildren(yearsGrid, renderLegend());
 };
 
-const formatLoadedStatus = ({ scope, counts, cached = false }) => {
+export const formatLoadedStatus = ({ scope, counts }) => {
   const years = getHistoryYears(counts);
   const range = years[0] === years.at(-1) ? String(years[0]) : `${years.at(-1)}–${years[0]}`;
-  const total = calculateStats(counts).totalBlocks.toLocaleString();
   const source = scope === "all" ? "Entire graph" : "Current user";
-  const freshness = cached ? "cached" : `updated ${new Date().toLocaleTimeString()}`;
-  return `${source} · ${range} · ${total} blocks · ${freshness}`;
+  return `${source} · ${range}`;
 };
 
 const getCurrentUserUid = (api) => {
@@ -580,6 +579,7 @@ export const createExtensionController = ({ extensionAPI, api = window.roamAlpha
   let root = null;
   let topbarObserver = null;
   let loadVersion = 0;
+  let shareFeedbackTimer = null;
   const cache = new Map();
   const cleanup = [];
   const userUid = getCurrentUserUid(api);
@@ -628,33 +628,62 @@ export const createExtensionController = ({ extensionAPI, api = window.roamAlpha
     else removeTopbarButton();
   };
 
+  const setShareButtonState = (button, { label, icon, resetAfter = 0 }) => {
+    if (shareFeedbackTimer) {
+      clearTimeout(shareFeedbackTimer);
+      shareFeedbackTimer = null;
+    }
+    for (const iconName of ["camera", "time", "tick", "cross"]) {
+      button.classList.remove(`bp3-icon-${iconName}`);
+    }
+    button.classList.add(`bp3-icon-${icon}`);
+    button.textContent = label;
+    button.title = label === "Share Screenshot" ? "Share complete history as a high-resolution PNG" : label;
+    button.setAttribute("aria-label", button.title);
+    if (resetAfter > 0 && !destroyed) {
+      shareFeedbackTimer = setTimeout(() => {
+        shareFeedbackTimer = null;
+        setShareButtonState(button, { label: "Share Screenshot", icon: "camera" });
+      }, resetAfter);
+    }
+  };
+
   const shareCurrentHistory = async () => {
     if (!root || destroyed) return;
     const scope = root.querySelector("select[name='scope']")?.value || "all";
     const cached = cache.get(scope);
-    const status = root.querySelector(".rcg-status");
     const shareButton = root.querySelector(".rcg-share");
-    if (!cached || !status || !shareButton) return;
+    if (!cached || !shareButton) return;
 
     shareButton.disabled = true;
     shareButton.setAttribute("aria-busy", "true");
-    status.textContent = "Preparing complete-history screenshot…";
-    status.classList.remove("rcg-status--error");
+    setShareButtonState(shareButton, { label: "Preparing…", icon: "time" });
     try {
       const screenshot = await createShareScreenshot({ counts: cached.counts, scope });
       const delivery = await deliverShareScreenshot(screenshot);
       const deliveryLabel = {
-        shared: "shared",
-        copied: "copied to clipboard",
-        downloaded: "downloaded",
+        shared: "Shared",
+        copied: "Copied",
+        downloaded: "Downloaded",
       }[delivery];
-      status.textContent = `${formatLoadedStatus({ scope, counts: cached.counts, cached: true })} · Screenshot ${deliveryLabel}`;
+      setShareButtonState(shareButton, {
+        label: deliveryLabel,
+        icon: "tick",
+        resetAfter: 2200,
+      });
     } catch (error) {
       if (error?.name === "AbortError") {
-        status.textContent = `${formatLoadedStatus({ scope, counts: cached.counts, cached: true })} · Sharing canceled`;
+        setShareButtonState(shareButton, {
+          label: "Canceled",
+          icon: "cross",
+          resetAfter: 1800,
+        });
       } else {
-        status.textContent = `Could not share screenshot: ${error?.message || error}`;
-        status.classList.add("rcg-status--error");
+        setShareButtonState(shareButton, {
+          label: "Try again",
+          icon: "cross",
+          resetAfter: 2600,
+        });
       }
     } finally {
       shareButton.disabled = false;
@@ -707,13 +736,16 @@ export const createExtensionController = ({ extensionAPI, api = window.roamAlpha
     );
     shareButton.type = "button";
     shareButton.disabled = true;
+    shareButton.title = "Share complete history as a high-resolution PNG";
+    shareButton.setAttribute("aria-label", shareButton.title);
     shareButton.addEventListener("click", () => void shareCurrentHistory());
     const refresh = createElement(
       "button",
-      "bp3-button bp3-minimal bp3-icon-refresh rcg-refresh",
-      "Refresh"
+      "bp3-button bp3-minimal bp3-icon-refresh rcg-refresh rcg-icon-button"
     );
     refresh.type = "button";
+    refresh.title = "Refresh complete history";
+    refresh.setAttribute("aria-label", refresh.title);
     refresh.addEventListener("click", () => void load(true));
     const closeButton = createElement(
       "button",
@@ -725,16 +757,11 @@ export const createExtensionController = ({ extensionAPI, api = window.roamAlpha
     actions.append(scopeLabel, shareButton, refresh, closeButton);
     header.append(mark, titleGroup, actions);
 
-    const note = createElement(
-      "p",
-      "rcg-note",
-      "Every dated block is included. Imports and Agents count under their creator. Data stays in this browser."
-    );
     const status = createElement("div", "rcg-status", "Open the graph to load activity.");
     status.setAttribute("role", "status");
     const stats = createElement("div", "rcg-stats");
     const overviewMeta = createElement("div", "rcg-overview__meta");
-    overviewMeta.append(status, note);
+    overviewMeta.appendChild(status);
     const overview = createElement("section", "rcg-overview");
     overview.append(stats, overviewMeta);
     const content = createElement("div", "rcg-content");
@@ -759,7 +786,7 @@ export const createExtensionController = ({ extensionAPI, api = window.roamAlpha
     if (!force && cached && Date.now() - cached.loadedAt < CACHE_TTL_MS) {
       renderStats(stats, cached.counts);
       renderHistory(content, cached.counts);
-      status.textContent = formatLoadedStatus({ scope, counts: cached.counts, cached: true });
+      status.textContent = formatLoadedStatus({ scope, counts: cached.counts });
       shareButton.disabled = false;
       return;
     }
@@ -767,6 +794,7 @@ export const createExtensionController = ({ extensionAPI, api = window.roamAlpha
     const version = ++loadVersion;
     status.textContent = "Reading complete Roam history…";
     status.classList.remove("rcg-status--error");
+    setShareButtonState(shareButton, { label: "Share Screenshot", icon: "camera" });
     refresh.disabled = true;
     shareButton.disabled = true;
     stats.replaceChildren();
@@ -837,6 +865,8 @@ export const createExtensionController = ({ extensionAPI, api = window.roamAlpha
     removeTopbarButton();
     root?.remove();
     root = null;
+    if (shareFeedbackTimer) clearTimeout(shareFeedbackTimer);
+    shareFeedbackTimer = null;
     for (const dispose of cleanup.splice(0)) dispose();
     try {
       extensionAPI.ui.commandPalette.removeCommand({ label: COMMAND_LABEL });

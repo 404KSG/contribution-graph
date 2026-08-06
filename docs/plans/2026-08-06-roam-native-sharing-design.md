@@ -10,7 +10,7 @@ Keep the dense two-column annual archive because it makes complete history scann
 
 `Share Screenshot` exports the complete active dataset, not the visible scroll viewport. A dedicated Canvas renderer draws a deterministic light-background PNG containing the title, active scope, full year range, four summary metrics, every annual heatmap, annual totals, a legend, and attribution. Two years are laid out per row, so long histories remain compact while every day remains present.
 
-The image is rendered at 2× resolution for sharp text and cells. Sharing follows a progressive browser-native path:
+The image is rendered at 3× resolution for sharp text and cells. Sharing follows a progressive browser-native path:
 
 1. Use Web Share with a PNG file when supported.
 2. Otherwise copy the PNG to the clipboard.

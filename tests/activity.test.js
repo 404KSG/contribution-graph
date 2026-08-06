@@ -11,6 +11,7 @@ import {
   calculateStats,
   createShareScreenshot,
   deliverShareScreenshot,
+  formatLoadedStatus,
   formatDateKey,
   getContributionLevel,
   getHistoryYears,
@@ -73,6 +74,16 @@ test("history years include gaps through the current year", () => {
   assert.deepEqual(getHistoryYears({ "2023-04-01": 1 }, 2026), [2026, 2025, 2024, 2023]);
 });
 
+test("loaded status stays minimal and reports only scope and year coverage", () => {
+  assert.equal(
+    formatLoadedStatus({
+      scope: "all",
+      counts: { "2020-01-01": 1, "2026-08-06": 185_322 },
+    }),
+    "Entire graph · 2020–2026"
+  );
+});
+
 test("share image layout includes every history year in a compact grid", () => {
   const shortHistory = buildShareImageLayout({ "2026-01-01": 1 }, 2026);
   const longHistory = buildShareImageLayout(
@@ -114,6 +125,8 @@ test("share screenshot renderer draws the complete history to a PNG", async () =
   assert.equal(result.blob.type, "image/png");
   assert.equal(result.filename, "roam-contribution-graph-2026-08-06.png");
   assert.equal(result.width, 900);
+  assert.equal(canvas.width, 2_700);
+  assert.equal(context.imageSmoothingEnabled, false);
   assert.ok(fillRects > 1_000, "all three calendar years should be drawn");
 });
 
