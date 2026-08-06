@@ -11,11 +11,13 @@ const GRAPH_TOP = 24;
 const GRAPH_LEFT = 32;
 
 export const ALL_BLOCKS_QUERY = `[:find ?time
+  :timeout 60000
   :where
   [?entity :block/string]
   [?entity :create/time ?time]]`;
 
 export const OWN_BLOCKS_QUERY = `[:find ?time
+  :timeout 60000
   :in $ ?user-uid
   :where
   [?user :user/uid ?user-uid]
@@ -160,21 +162,24 @@ export const calculateStats = (counts, today = new Date()) => {
 };
 
 const resolveQuery = (api) => {
+  if (api?.data?.async?.q) return api.data.async.q.bind(api.data.async);
   if (api?.data?.fast?.q) return api.data.fast.q.bind(api.data.fast);
+  if (api?.data?.q) return api.data.q.bind(api.data);
   if (api?.q) return api.q.bind(api);
   throw new Error("Roam Datalog query API is unavailable");
 };
 
-export const queryCreationTimestamps = ({ api, scope = "all", userUid = null }) => {
+export const queryCreationTimestamps = async ({ api, scope = "all", userUid = null }) => {
   const query = resolveQuery(api);
-  const rows =
+  const rows = await (
     scope === "own"
       ? userUid
         ? query(OWN_BLOCKS_QUERY, userUid)
         : (() => {
             throw new Error("Current Roam user is unavailable");
           })()
-      : query(ALL_BLOCKS_QUERY);
+      : query(ALL_BLOCKS_QUERY)
+  );
 
   return (Array.isArray(rows) ? rows : [])
     .map((row) => (Array.isArray(row) ? row[0] : row))
@@ -325,6 +330,7 @@ export const createExtensionController = ({ extensionAPI, api = window.roamAlpha
     if (destroyed) return;
     if (!root) root = createDialog();
     root.classList.add("rcg-root--open");
+    root.setAttribute("aria-hidden", "false");
     root.querySelector(".rcg-dialog")?.focus();
     void load(false);
   };
@@ -333,6 +339,7 @@ export const createExtensionController = ({ extensionAPI, api = window.roamAlpha
     if (!root) return;
     loadVersion += 1;
     root.classList.remove("rcg-root--open");
+    root.setAttribute("aria-hidden", "true");
   };
 
   const ensureTopbarButton = () => {
@@ -361,7 +368,7 @@ export const createExtensionController = ({ extensionAPI, api = window.roamAlpha
   const createDialog = () => {
     const overlay = createElement("div", "rcg-root");
     overlay.id = ROOT_ID;
-    overlay.setAttribute("aria-hidden", "false");
+    overlay.setAttribute("aria-hidden", "true");
     const dialog = createElement("div", "rcg-dialog");
     dialog.tabIndex = -1;
     dialog.setAttribute("role", "dialog");
@@ -444,7 +451,7 @@ export const createExtensionController = ({ extensionAPI, api = window.roamAlpha
     await nextFrame();
 
     try {
-      const timestamps = queryCreationTimestamps({ api, scope, userUid });
+      const timestamps = await queryCreationTimestamps({ api, scope, userUid });
       status.textContent = `Aggregating ${timestamps.length.toLocaleString()} blocks across all years…`;
       const counts = await aggregateTimestampsInBatches(timestamps, {
         shouldContinue: () => !destroyed && version === loadVersion,
@@ -469,7 +476,8 @@ export const createExtensionController = ({ extensionAPI, api = window.roamAlpha
   };
 
   const init = () => {
-    if (extensionAPI.settings.get(SHOW_BUTTON_SETTING) === undefined) {
+    const showButtonSetting = extensionAPI.settings.get(SHOW_BUTTON_SETTING);
+    if (showButtonSetting !== true && showButtonSetting !== false) {
       extensionAPI.settings.set(SHOW_BUTTON_SETTING, true);
     }
     extensionAPI.settings.panel.create({

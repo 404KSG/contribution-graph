@@ -89,33 +89,39 @@ test("stats calculate totals and streaks", () => {
   });
 });
 
-test("query selection supports all authors and current user", () => {
+test("query selection prefers Roam's asynchronous API", async () => {
   const calls = [];
   const api = {
     data: {
-      fast: {
-        q: (...args) => {
+      async: {
+        q: async (...args) => {
           calls.push(args);
           return [[1], [2], ["invalid"]];
         },
       },
+      fast: { q: () => assert.fail("async API should be preferred") },
     },
   };
 
-  assert.deepEqual(queryCreationTimestamps({ api, scope: "all" }), [1, 2]);
+  assert.deepEqual(await queryCreationTimestamps({ api, scope: "all" }), [1, 2]);
   assert.equal(calls[0][0], ALL_BLOCKS_QUERY);
   assert.deepEqual(
-    queryCreationTimestamps({ api, scope: "own", userUid: "user-123" }),
+    await queryCreationTimestamps({ api, scope: "own", userUid: "user-123" }),
     [1, 2]
   );
   assert.equal(calls[1][0], OWN_BLOCKS_QUERY);
   assert.equal(calls[1][1], "user-123");
 });
 
-test("own-author scope fails clearly without a current user", () => {
+test("query selection falls back to the synchronous API", async () => {
+  const api = { data: { q: () => [[3], [4]] } };
+  assert.deepEqual(await queryCreationTimestamps({ api }), [3, 4]);
+});
+
+test("own-author scope fails clearly without a current user", async () => {
   const api = { data: { fast: { q: () => [] } } };
-  assert.throws(
-    () => queryCreationTimestamps({ api, scope: "own", userUid: null }),
+  await assert.rejects(
+    queryCreationTimestamps({ api, scope: "own", userUid: null }),
     /Current Roam user is unavailable/
   );
 });
