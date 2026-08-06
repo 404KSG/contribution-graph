@@ -1,11 +1,76 @@
-**Contribution Graph** shows your Roam Research activity like a GitHub contribution graph.
-Days with no created blocks are white, and days with >=50 created blocks are dark green.
+# Contribution Graph for Roam Research
 
-https://github.com/Dagulf795/contribution-graph/assets/46326330/69dce061-f7ba-454b-bea8-1376576ba223
+Contribution Graph turns your **complete Roam block creation history** into a GitHub-style calendar heatmap. It renders every year from your earliest block through the current year; history is never truncated to a rolling window.
 
-## Acknowledgements
+This fork is a ground-up, dependency-free rewrite of [Dagulf795/contribution-graph](https://github.com/Dagulf795/contribution-graph), originally created by Felix Stocker.
 
-This repository is based on [similar pages](https://github.com/phonetonote/similar-pages/).
+## What It Shows
 
-Thank you to AyushSaini00 for the [github-contribution-graph](https://www.npmjs.com/package/github-contribution-graph) package.
+- One full calendar graph per year, newest first
+- Fixed activity levels that remain comparable across years:
+  - 1-9 blocks
+  - 10-24 blocks
+  - 25-49 blocks
+  - 50+ blocks
+- Total blocks, active days, current streak, and longest streak
+- All authors by default
+- Optional current-Roam-user scope for multiplayer graphs
 
+The metric counts entities with both `:block/string` and `:create/time`, so pages are excluded. Imports and Agents acting as the selected Roam user may still contribute to the count; this is an activity view, not a claim about knowledge quality or exclusively human typing.
+
+## Performance And Privacy
+
+- No query runs during normal Roam startup.
+- The complete-history query runs only when you open the graph, when the one-minute in-memory cache expires, or when you press **Refresh full history**.
+- Timestamp aggregation yields between large batches so rendering many years remains responsive after Roam returns the query result.
+- There are no runtime dependencies, servers, analytics, tokens, or network requests.
+- Block text is not read. Daily counts are not written to the console or sent anywhere.
+
+## Use
+
+Open the Command Palette and run:
+
+```text
+Contribution Graph: Open complete history
+```
+
+A topbar grid button is enabled by default. It can be hidden under **Settings → Contribution Graph** without disabling the command.
+
+Inside the dialog:
+
+- switch between **All authors** and **Current Roam user** when Roam exposes the current user UID;
+- press **Refresh full history** to bypass the short memory cache;
+- hover a cell to see its exact date and block count;
+- press `Escape`, the close button, or the backdrop to close.
+
+## Developer Installation
+
+Until this fork is accepted into Roam Depot:
+
+```bash
+git clone https://github.com/404KSG/contribution-graph.git
+cd contribution-graph
+npm run build
+```
+
+Then load the repository directory as a Roam developer extension. The build produces `extension.js` and `extension.css` at the repository root.
+
+## Development
+
+The project requires only Node.js; `package.json` has no dependencies.
+
+```bash
+npm test
+npm run build
+npm run check
+```
+
+The build copies the reviewed ES module and CSS into the two files expected by Roam. Core aggregation, calendar, scope-query, threshold, and streak behavior is covered by Node's built-in test runner.
+
+## Design
+
+The rewrite rationale, data flow, lifecycle boundary, and verification plan are documented in [the design note](docs/plans/2026-08-06-contribution-graph-rewrite-design.md).
+
+## License
+
+MIT. See [LICENSE](LICENSE).

@@ -1,45 +1,27 @@
 {
   "name": "contribution-graph",
-  "author": {
-    "name": "Felix Stocker",
-    "email": "felix.stocker@gmail.com"
-  },
-  "version": "0.0.1",
-  "description": "Display your Roam activity",
-  "main": "index.js",
-  "types": "index.d.ts",
+  "version": "1.0.0",
+  "description": "A complete-history contribution graph for Roam Research",
+  "type": "module",
+  "main": "extension.js",
   "scripts": {
-    "prebuild:roam": "npm install",
-    "build:roam": "roamjs-scripts build --marketplace",
-    "build": "roamjs-scripts build",
-    "dev": "roamjs-scripts dev",
-    "dev:roam": "roamjs-scripts dev --depot",
-    "test": "TZ=UTC jest --config jest.config.ts"
+    "benchmark": "TZ=UTC node scripts/benchmark.mjs",
+    "build": "node build.mjs",
+    "build:roam": "npm run build",
+    "check": "node --check src/index.js && node --check extension.js",
+    "test": "TZ=UTC node --test"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Dagulf795/contribution-graph.git"
+    "url": "https://github.com/404KSG/contribution-graph.git"
   },
-  "devDependencies": {
-    "@testing-library/react": "^12.1.5",
-    "@testing-library/react-hooks": "^8.0.1",
-    "@types/jest": "^27.0.1",
-    "@typescript-eslint/eslint-plugin": "^5.38.1",
-    "@typescript-eslint/parser": "^5.38.1",
-    "eslint": "^8.20.0",
-    "eslint-plugin-react": "^7.31.8",
-    "eslint-plugin-react-hooks": "^4.6.0",
-    "jest": "^27.1.0",
-    "roamjs-scripts": "^0.24.3",
-    "ts-jest": "^27.0.5",
-    "ts-loader": "^9.3.0",
-    "ts-node": "^10.2.1",
-    "typescript": "^4.7.4",
-    "typescript-plugin-css-modules": "^3.4.0"
-  },
-  "dependencies": {
-    "babel-plugin-react-css-modules": "^5.2.6",
-    "github-contribution-graph": "^2.0.2",
-    "roamjs-components": "^0.74.23"
-  }
+  "keywords": [
+    "roam-research",
+    "roam-depot",
+    "contribution-graph",
+    "activity",
+    "heatmap"
+  ],
+  "author": "404KSG, based on the original extension by Felix Stocker",
+  "license": "MIT"
 }

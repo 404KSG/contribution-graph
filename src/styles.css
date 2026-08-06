@@ -1,0 +1,259 @@
+:root {
+  --rcg-bg: #ffffff;
+  --rcg-surface: #f7f8fa;
+  --rcg-border: #d8e1e8;
+  --rcg-text: #182026;
+  --rcg-muted: #738694;
+  --rcg-level-0: #ebedf0;
+  --rcg-level-1: #9be9a8;
+  --rcg-level-2: #40c463;
+  --rcg-level-3: #30a14e;
+  --rcg-level-4: #216e39;
+}
+
+.bp3-dark {
+  --rcg-bg: #202b33;
+  --rcg-surface: #293742;
+  --rcg-border: #5c7080;
+  --rcg-text: #f5f8fa;
+  --rcg-muted: #a7b6c2;
+  --rcg-level-0: #394b59;
+}
+
+.rcg-root {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(16, 22, 26, 0.5);
+}
+
+.rcg-root--open {
+  display: flex;
+}
+
+.rcg-dialog {
+  box-sizing: border-box;
+  width: min(1040px, calc(100vw - 32px));
+  max-height: min(860px, calc(100vh - 32px));
+  overflow: auto;
+  border: 1px solid var(--rcg-border);
+  border-radius: 10px;
+  background: var(--rcg-bg);
+  color: var(--rcg-text);
+  box-shadow: 0 18px 46px rgba(16, 22, 26, 0.35);
+  outline: none;
+}
+
+.rcg-header {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 20px 22px 14px;
+  border-bottom: 1px solid var(--rcg-border);
+  background: var(--rcg-bg);
+}
+
+.rcg-title {
+  margin: 0;
+  color: var(--rcg-text);
+  font-size: 22px;
+  line-height: 1.2;
+}
+
+.rcg-subtitle,
+.rcg-note {
+  margin: 4px 0 0;
+  color: var(--rcg-muted);
+  font-size: 12px;
+}
+
+.rcg-close {
+  min-width: 32px;
+  font-size: 22px;
+}
+
+.rcg-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 22px 8px;
+}
+
+.rcg-scope {
+  display: grid;
+  gap: 4px;
+  color: var(--rcg-muted);
+  font-size: 12px;
+}
+
+.rcg-scope__select {
+  min-width: 190px;
+}
+
+.rcg-note,
+.rcg-status {
+  padding-inline: 22px;
+}
+
+.rcg-status {
+  min-height: 20px;
+  margin-top: 10px;
+  color: var(--rcg-muted);
+  font-size: 12px;
+}
+
+.rcg-status--error {
+  color: #c23030;
+}
+
+.rcg-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  padding: 14px 22px;
+}
+
+.rcg-stat {
+  display: grid;
+  gap: 2px;
+  padding: 12px;
+  border: 1px solid var(--rcg-border);
+  border-radius: 7px;
+  background: var(--rcg-surface);
+}
+
+.rcg-stat__value {
+  font-size: 18px;
+}
+
+.rcg-stat__label {
+  color: var(--rcg-muted);
+  font-size: 11px;
+}
+
+.rcg-content {
+  padding: 0 22px 22px;
+}
+
+.rcg-loading {
+  display: grid;
+  min-height: 180px;
+  place-items: center;
+  color: var(--rcg-muted);
+}
+
+.rcg-year {
+  margin-top: 18px;
+}
+
+.rcg-year__heading {
+  margin: 0 0 7px;
+  color: var(--rcg-text);
+  font-size: 15px;
+}
+
+.rcg-year__scroller {
+  overflow-x: auto;
+  padding: 10px;
+  border: 1px solid var(--rcg-border);
+  border-radius: 7px;
+  background: var(--rcg-surface);
+}
+
+.rcg-year__svg {
+  display: block;
+  max-width: none;
+}
+
+.rcg-year__label {
+  fill: var(--rcg-muted);
+  font-size: 9px;
+}
+
+.rcg-cell {
+  stroke: rgba(27, 31, 35, 0.06);
+  stroke-width: 1px;
+}
+
+.rcg-cell--outside {
+  fill: transparent;
+  stroke: transparent;
+}
+
+.rcg-cell--level-0,
+.rcg-legend__cell.rcg-cell--level-0 {
+  fill: var(--rcg-level-0);
+  background: var(--rcg-level-0);
+}
+
+.rcg-cell--level-1,
+.rcg-legend__cell.rcg-cell--level-1 {
+  fill: var(--rcg-level-1);
+  background: var(--rcg-level-1);
+}
+
+.rcg-cell--level-2,
+.rcg-legend__cell.rcg-cell--level-2 {
+  fill: var(--rcg-level-2);
+  background: var(--rcg-level-2);
+}
+
+.rcg-cell--level-3,
+.rcg-legend__cell.rcg-cell--level-3 {
+  fill: var(--rcg-level-3);
+  background: var(--rcg-level-3);
+}
+
+.rcg-cell--level-4,
+.rcg-legend__cell.rcg-cell--level-4 {
+  fill: var(--rcg-level-4);
+  background: var(--rcg-level-4);
+}
+
+.rcg-legend {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 5px;
+  margin-top: 14px;
+  color: var(--rcg-muted);
+  font-size: 10px;
+}
+
+.rcg-legend__cell {
+  width: 11px;
+  height: 11px;
+  border-radius: 2px;
+}
+
+.rcg-topbar-button {
+  margin-left: 6px;
+  font-size: 17px;
+  line-height: 1;
+}
+
+@media (max-width: 680px) {
+  .rcg-root {
+    padding: 0;
+  }
+
+  .rcg-dialog {
+    width: 100vw;
+    max-height: 100vh;
+    border-radius: 0;
+  }
+
+  .rcg-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
