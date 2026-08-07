@@ -217,20 +217,6 @@ export const buildShareImageLayout = (
   };
 };
 
-const drawRoundedRect = (context, x, y, width, height, radius, fill, stroke) => {
-  context.beginPath();
-  context.roundRect(x, y, width, height, radius);
-  if (fill) {
-    context.fillStyle = fill;
-    context.fill();
-  }
-  if (stroke) {
-    context.strokeStyle = stroke;
-    context.lineWidth = 1;
-    context.stroke();
-  }
-};
-
 const drawShareYear = (context, { year, counts, x, y, fontFamily, bounds }) => {
   const calendar = buildYearCalendar(year, counts);
   const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -319,17 +305,21 @@ export const createShareScreenshot = async ({
     ["BLOCKS", stats.totalBlocks.toLocaleString()],
   ];
   const statsY = 72;
+  const statsHeight = 46;
   const statsWidth = layout.width - SHARE_PADDING * 2;
   const statWidth = statsWidth / statItems.length;
-  drawRoundedRect(context, SHARE_PADDING, statsY, statsWidth, 46, 3, "#ffffff", "#d8e1e8");
+  context.strokeStyle = "#d8e1e8";
+  context.lineWidth = 1;
+  context.beginPath();
+  context.moveTo(SHARE_PADDING, statsY + 0.5);
+  context.lineTo(SHARE_PADDING + statsWidth, statsY + 0.5);
+  context.moveTo(SHARE_PADDING, statsY + statsHeight - 0.5);
+  context.lineTo(SHARE_PADDING + statsWidth, statsY + statsHeight - 0.5);
   for (const [index, [label, value]] of statItems.entries()) {
     const statX = SHARE_PADDING + index * statWidth;
     if (index > 0) {
-      context.strokeStyle = "#d8e1e8";
-      context.beginPath();
-      context.moveTo(statX, statsY);
-      context.lineTo(statX, statsY + 46);
-      context.stroke();
+      context.moveTo(statX + 0.5, statsY + 0.5);
+      context.lineTo(statX + 0.5, statsY + statsHeight - 0.5);
     }
     const statCenterX = statX + statWidth / 2;
     context.fillStyle = "#182026";
@@ -340,6 +330,7 @@ export const createShareScreenshot = async ({
     context.font = `600 9px ${fontFamily}`;
     context.fillText(label, statCenterX, statsY + 39);
   }
+  context.stroke();
 
   for (const [index, year] of layout.years.entries()) {
     const column = index % layout.columns;

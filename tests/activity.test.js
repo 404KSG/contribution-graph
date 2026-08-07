@@ -120,14 +120,18 @@ test("share image layout includes every history year in a compact grid", () => {
 
 test("share screenshot renderer draws the complete history to a PNG", async () => {
   let fillRects = 0;
+  let roundedRects = 0;
   const filledRects = [];
   const strokedRects = [];
+  const lineSegments = [];
   const drawnText = [];
   const drawnTextEntries = [];
   const drawnFonts = [];
   const context = {
     beginPath() {},
-    roundRect() {},
+    roundRect() {
+      roundedRects += 1;
+    },
     fill() {},
     stroke() {},
     strokeRect(...args) {
@@ -143,8 +147,12 @@ test("share screenshot renderer draws the complete history to a PNG", async () =
       drawnTextEntries.push({ value, x, y, textAlign: this.textAlign });
       drawnFonts.push(this.font);
     },
-    moveTo() {},
-    lineTo() {},
+    moveTo(x, y) {
+      this.currentPoint = [x, y];
+    },
+    lineTo(x, y) {
+      lineSegments.push([...this.currentPoint, x, y]);
+    },
   };
   const canvas = {
     getContext: () => context,
@@ -161,6 +169,15 @@ test("share screenshot renderer draws the complete history to a PNG", async () =
   assert.equal(result.width, 900);
   assert.equal(canvas.width, 2_700);
   assert.equal(context.imageSmoothingEnabled, false);
+  assert.equal(roundedRects, 0, "the statistics strip should not render a closed card");
+  assert.ok(
+    lineSegments.some(([x1, y1, x2, y2]) => x1 === 32 && y1 === 72.5 && x2 === 868 && y2 === 72.5),
+    "the statistics strip should have an open full-width top rule"
+  );
+  assert.ok(
+    lineSegments.some(([x1, y1, x2, y2]) => x1 === 32 && y1 === 117.5 && x2 === 868 && y2 === 117.5),
+    "the statistics strip should have an open full-width bottom rule"
+  );
   assert.ok(fillRects > 800, "recorded history should be drawn");
   assert.ok(fillRects < 1_000, "future dates should not be drawn as empty activity cells");
   assert.ok(strokedRects.length > 0, "dates before the first block should use faint outlines");
